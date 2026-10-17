@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+vendor/
+.dart_tool/
+.packages
+
+# Build artifacts
+mobile/build/app/
+mobile/build/flutter_assets/
+mobile/build/ios/
+mobile/build/linux/
+mobile/build/macos/
+mobile/build/windows/
+
+# Keep mobile/build/web for immediate static deployment
+!mobile/build/web/
+
+# Environment files
+.env.local
+.env.*.local
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+cloudflared*.log
+scratch/

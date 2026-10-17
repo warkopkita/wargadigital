@@ -1,0 +1,6 @@
+# File ini adalah CONTOH. Salin ke key.properties dan isi dengan data asli Anda.
+# JANGAN commit file key.properties ke git!
+storePassword=PASSWORD_KEYSTORE_ANDA
+keyPassword=PASSWORD_KEY_ANDA
+keyAlias=wargadigital
+storeFile=C:/Users/moham/upload-keystore.jks

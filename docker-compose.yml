@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # 1. Backend Laravel 11 API
+  backend:
+    image: php:8.3-cli-alpine
+    container_name: wargadigital_backend
+    restart: unless-stopped
+    working_dir: /var/www/backend
+    volumes:
+      - ./backend:/var/www/backend
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    command: >
+      sh -c "php artisan migrate --force &&
+             php artisan serve --host=0.0.0.0 --port=8000"
+    ports:
+      - "8000:8000"
+
+  # 2. Web Dashboard Pengurus (Nginx Serving Built Assets)
+  web:
+    image: nginx:alpine
+    container_name: wargadigital_web
+    restart: unless-stopped
+    volumes:
+      - ./web/dist:/usr/share/nginx/html
+    ports:
+      - "80:80"
+      - "5173:80"
+
+  # 3. Mobile Web App (Flutter Release)
+  mobile:
+    image: nginx:alpine
+    container_name: wargadigital_mobile
+    restart: unless-stopped
+    volumes:
+      - ./mobile/build/web:/usr/share/nginx/html
+    ports:
+      - "8080:80"
