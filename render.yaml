@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: warga-digital-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    region: singapore
+    healthCheckPath: /api/statistics
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
