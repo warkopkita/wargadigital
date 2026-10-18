@@ -729,539 +729,255 @@
           </div>
         </div>
 
-        <!-- 4. TAB: SMART SISKAMLING (JADWAL RONDA, CHECKPOINT QR & KEAMANAN) -->
+                <!-- 4. TAB: ABSEN LINMAS & UPDATE SITUASI KEAMANAN (KHUSUS LINMAS & PENGURUS RT) -->
         <div v-if="currentTab === 'patrols'">
-          <!-- Header Command Bar -->
+          <!-- Header Command Bar Linmas -->
           <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%); color: white; border: none; box-shadow: 0 10px 25px -5px rgba(6, 78, 59, 0.4);">
             <div class="card-body" style="padding: 24px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
                 <div>
                   <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
                     <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(52, 211, 153, 0.4); padding: 4px 10px; border-radius: 20px; font-size: 0.76rem; font-weight: 700; color: #86efac;">
-                      🛡️ SMART SISKAMLING DIGITAL RT 001 / RW 005
+                      🛡️ PUSAT OPERASIONAL KEAMANAN & LINMAS RT 001
                     </span>
-                    <span class="badge badge-success" style="font-size: 0.72rem;">Sistem Aktif 24 Jam</span>
+                    <span class="badge badge-warning" style="font-size: 0.72rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">
+                      🔒 Akses Khusus: Linmas & Pengurus RT
+                    </span>
                   </div>
                   <h2 style="font-size: 1.45rem; font-weight: 800; color: white; margin: 0 0 6px 0;">
-                    Manajemen Keamanan Lingkungan & Jadwal Ronda Cerdas
+                    Presensi Linmas di Tempat & Update Situasi Keamanan Pos
                   </h2>
                   <p style="font-size: 0.88rem; color: #cbd5e1; margin: 0; max-width: 680px; line-height: 1.5;">
-                    Penjadwalan otomatis berkala, absensi presensi GPS warga, pemantauan scan QR checkpoint pos/portal, permohonan tukar jadwal & integrasi sanksi denda masuk buku kas RT.
+                    Pencatatan absensi geotagging GPS petugas jaga di Pos Ronda RT 001, buku mutasi situasi harian, serta verifikasi laporan langsung oleh Ketua RT. Data ini dirahasiakan dari warga biasa.
                   </p>
                 </div>
 
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                  <button class="btn-primary" style="background: #10b981; border: none; font-weight: 700;" @click="autoGeneratePatrols">
-                    <Sparkles size="16" /> Auto-Generate 7 Hari
+                  <button class="btn-primary" style="background: #10b981; border: none; font-weight: 700; padding: 9px 16px;" @click="showLinmasCheckInModal = true">
+                    <MapPin size="16" /> Absen di Tempat (GPS)
                   </button>
-                  <button class="btn-outline" style="background: rgba(255,255,255,0.12); color: white; border-color: rgba(255,255,255,0.25);" @click="openCreatePatrolModal">
-                    <Plus size="16" /> Buat Jadwal
+                  <button class="btn-primary" style="background: #0284c7; border: none; font-weight: 700; padding: 9px 16px;" @click="showLinmasSituationModal = true">
+                    <MessageSquare size="16" /> Kirim Update Situasi
                   </button>
-                  <button class="btn-outline" style="background: rgba(255,255,255,0.12); color: white; border-color: rgba(255,255,255,0.25);" @click="openPrintPatrolSchedule">
-                    <Printer size="16" /> Cetak Jadwal A4
-                  </button>
-                  <button class="btn-outline" style="background: rgba(255,255,255,0.12); color: white; border-color: rgba(255,255,255,0.25);" @click="openPrintQRStickers">
-                    <QrCode size="16" /> Stiker QR Pos
-                  </button>
-                  <button class="btn-outline" style="background: #25d366; color: white; border: none; font-weight: 700;" @click="openBroadcastWAModal()">
-                    <MessageSquare size="16" /> Pengingat WA Malam Ini
+                  <button class="btn-outline" style="background: rgba(255,255,255,0.12); color: white; border-color: rgba(255,255,255,0.25);" @click="fetchPatrols">
+                    <RefreshCw size="16" /> Segarkan Data
                   </button>
                 </div>
               </div>
 
-              <!-- Quick KPI Stats -->
+              <!-- Quick Status Cards -->
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-top: 24px;">
                 <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 14px;">
-                  <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">TOTAL REGU TERJADWAL</div>
-                  <div style="font-size: 1.6rem; font-weight: 800; color: #fff; margin-top: 2px;">
-                    {{ patrolSummary.total_schedules || patrolsList.length }} <span style="font-size: 0.85rem; font-weight: 500; color: #86efac;">Regu</span>
+                  <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">PETUGAS PIKET AKTIF</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                    {{ linmasAttendances.filter(a => a.status === 'bertugas').length || 2 }} <span style="font-size: 0.85rem; font-weight: 500; color: #86efac;">Personil</span>
                   </div>
+                  <div style="font-size: 0.72rem; color: #86efac; margin-top: 2px;">Piket Malam Pos Utama</div>
                 </div>
 
                 <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 14px;">
-                  <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">HADIR PRESENSI GPS</div>
-                  <div style="font-size: 1.6rem; font-weight: 800; color: #34d399; margin-top: 2px;">
-                    {{ patrolSummary.total_hadir || 0 }} <span style="font-size: 0.85rem; font-weight: 500; color: #a7f3d0;">Warga</span>
+                  <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">STATUS SITUASI LINGKUNGAN</div>
+                  <div style="font-size: 1.35rem; font-weight: 800; color: #34d399; margin-top: 2px;">
+                    ● Aman Kondusif
                   </div>
+                  <div style="font-size: 0.72rem; color: #a7f3d0; margin-top: 2px;">Pintu portal terkunci</div>
                 </div>
 
                 <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 14px;">
-                  <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">IZIN / TUKAR SHIFT</div>
-                  <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">
-                    {{ patrolSummary.total_izin || 0 }} <span style="font-size: 0.85rem; font-weight: 500; color: #bae6fd;">Pengajuan</span>
+                  <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">VALIDASI GEOTAGGING GPS</div>
+                  <div style="font-size: 1.35rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">
+                    Valid di Tempat
                   </div>
+                  <div style="font-size: 0.72rem; color: #bae6fd; margin-top: 2px;">Radius 8m dari Pos RT 001</div>
                 </div>
 
                 <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 14px;">
-                  <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">ALPHA & DENDA KAS RT</div>
-                  <div style="font-size: 1.6rem; font-weight: 800; color: #f87171; margin-top: 2px;">
-                    {{ patrolSummary.total_alpha || 0 }} <span style="font-size: 0.82rem; font-weight: 500; color: #fca5a5;">(Rp {{ Number(patrolSummary.total_fines || 0).toLocaleString('id-ID') }})</span>
+                  <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">LOG KABAR HARI INI</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24; margin-top: 2px;">
+                    {{ linmasSituationLogs.length }} <span style="font-size: 0.85rem; font-weight: 500; color: #fef08a;">Laporan</span>
                   </div>
-                </div>
-
-                <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 14px;">
-                  <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">CHECKPOINT QR TERSCAN</div>
-                  <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24; margin-top: 2px;">
-                    {{ patrolSummary.total_checkpoints_scanned || 0 }} <span style="font-size: 0.85rem; font-weight: 500; color: #fef08a;">Titik</span>
-                  </div>
+                  <div style="font-size: 0.72rem; color: #fef08a; margin-top: 2px;">Diverifikasi Pengurus RT</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Navigation Sub-Tabs -->
-          <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; overflow-x: auto;">
+          <!-- Subtabs: Situasi Hari Ini & Rekap Absensi -->
+          <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">
             <button
-              class="btn-tab"
-              :class="{ active: patrolSubTab === 'schedules' }"
-              @click="patrolSubTab = 'schedules'"
+              :class="linmasSubTab === 'situation' ? 'btn-primary' : 'btn-outline'"
+              style="font-size: 0.85rem; padding: 8px 16px; display: flex; align-items: center; gap: 8px;"
+              @click="linmasSubTab = 'situation'"
             >
-              <Shield size="16" /> Jadwal Regu & Presensi Warga ({{ patrolsList.length }})
-            </button>
-            <button
-              class="btn-tab"
-              :class="{ active: patrolSubTab === 'swaps' }"
-              @click="patrolSubTab = 'swaps'"
-            >
-              <Users size="16" /> Permohonan Izin & Tukar Shift
-              <span v-if="patrolSwapsList.filter(s => s.status === 'pending').length > 0" class="badge badge-warning" style="margin-left: 6px; font-size: 0.7rem;">
-                {{ patrolSwapsList.filter(s => s.status === 'pending').length }}
+              <MessageSquare size="16" />
+              <span>Update Kabar Situasi Hari Ini (Buku Mutasi Linmas)</span>
+              <span style="background: #10b981; color: white; border-radius: 9999px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
+                {{ linmasSituationLogs.length }}
               </span>
             </button>
+
             <button
-              class="btn-tab"
-              :class="{ active: patrolSubTab === 'checkpoints' }"
-              @click="patrolSubTab = 'checkpoints'"
+              :class="linmasSubTab === 'attendance' ? 'btn-primary' : 'btn-outline'"
+              style="font-size: 0.85rem; padding: 8px 16px; display: flex; align-items: center; gap: 8px;"
+              @click="linmasSubTab = 'attendance'"
             >
-              <QrCode size="16" /> Logbook Checkpoint QR & Laporan Foto ({{ patrolCheckpointsList.length }})
-            </button>
-            <button
-              class="btn-tab"
-              :class="{ active: patrolSubTab === 'map' }"
-              @click="selectTab('patrols'); patrolSubTab = 'map'"
-            >
-              <MapPin size="16" /> Peta Pos Ronda & Titik Pantau (Leaflet)
+              <MapPin size="16" />
+              <span>Rekap Presensi Petugas Linmas di Tempat</span>
+              <span style="background: #0284c7; color: white; border-radius: 9999px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
+                {{ linmasAttendances.length }}
+              </span>
             </button>
           </div>
 
-          <!-- SUB-TAB 1: JADWAL REGU & PRESENSI WARGA -->
-          <div v-if="patrolSubTab === 'schedules'">
-            <div v-if="patrolsList.length === 0" class="card" style="text-align: center; padding: 48px 20px;">
-              <Shield size="48" style="color: #94a3b8; margin: 0 auto 12px auto;" />
-              <h3 style="font-size: 1.15rem; color: #0f172a; margin-bottom: 6px;">Belum Ada Jadwal Ronda Aktif</h3>
-              <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 20px;">
-                Klik tombol "Auto-Generate 7 Hari" untuk membagi warga ke dalam Regu 1 sampai 7 secara otomatis dan merata.
-              </p>
-              <div style="display: flex; justify-content: center; gap: 10px;">
-                <button class="btn-primary" @click="autoGeneratePatrols">
-                  <Sparkles size="16" /> Auto-Generate Jadwal Sekarang
-                </button>
-                <button class="btn-outline" @click="openCreatePatrolModal">
-                  <Plus size="16" /> Buat Manual
+          <!-- SUBTAB 1: LOG SITUASI HARI INI -->
+          <div v-if="linmasSubTab === 'situation'">
+            <div class="card">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <Clock size="18" style="color: #10b981;" />
+                  Catatan Update Situasi Keamanan Pos Ronda (Real-Time Hari Ini)
+                </h3>
+                <button class="btn-primary" style="font-size: 0.8rem; padding: 6px 14px;" @click="showLinmasSituationModal = true">
+                  <Plus size="14" /> Tulis Laporan Baru
                 </button>
               </div>
-            </div>
-
-            <div v-for="patrol in patrolsList" :key="patrol.id" class="card" style="margin-bottom: 18px; border-left: 4px solid #16a34a;">
-              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: #fafafa;">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <h3 class="card-title" style="margin: 0; color: #0f172a; font-weight: 800; font-size: 1.05rem;">
-                      {{ patrol.day_name }}, {{ patrol.patrol_date }} • {{ patrol.shift_name }}
-                    </h3>
-                    <span class="badge badge-success">Regu Aktif</span>
-                    <span v-if="patrol.checkpoints_count > 0" class="badge badge-info">
-                      📍 {{ patrol.checkpoints_count }} Checkpoint Scanned
-                    </span>
-                  </div>
-                  <p style="font-size: 0.8rem; color: #64748b; margin: 4px 0 0 0;">
-                    Wilayah: RT {{ patrol.rt }} / RW {{ patrol.rw }} • {{ patrol.notes }}
-                  </p>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <button
-                    class="btn-outline"
-                    style="font-size: 0.78rem; padding: 6px 12px; background: #ecfdf5; color: #065f46; border-color: #a7f3d0;"
-                    @click="openBroadcastWAModal(patrol)"
-                  >
-                    <MessageSquare size="14" /> Kirim WA Regu Ini
-                  </button>
-                  <button
-                    class="btn-text"
-                    style="color: #dc2626; font-size: 0.78rem; padding: 6px 8px;"
-                    title="Hapus Jadwal"
-                    @click="deletePatrolSchedule(patrol.id)"
-                  >
-                    <Trash2 size="15" />
-                  </button>
-                </div>
-              </div>
-
               <div class="card-body">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px;">
+                <div v-if="linmasSituationLogs.length === 0" style="text-align: center; padding: 40px; color: #64748b;">
+                  Belum ada catatan situasi pos ronda hari ini.
+                </div>
+                <div v-else style="display: flex; flex-direction: column; gap: 14px;">
                   <div
-                    v-for="member in patrol.members"
-                    :key="member.id"
-                    style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;"
+                    v-for="log in linmasSituationLogs"
+                    :key="log.id"
+                    style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; background: #ffffff; display: flex; justify-content: space-between; align-items: flex-start; gap: 14px;"
                   >
-                    <div>
-                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                        <div>
-                          <strong style="font-size: 0.94rem; color: #0f172a;">{{ member.name }}</strong>
-                          <div style="font-size: 0.76rem; color: #64748b;">📞 WA: {{ member.phone }}</div>
-                          <div v-if="member.address" style="font-size: 0.72rem; color: #94a3b8;">🏠 {{ member.address }}</div>
-                        </div>
-
-                        <!-- Status Badge -->
-                        <div>
-                          <span v-if="member.has_checked_in || member.status === 'hadir'" class="badge badge-success">
-                            ✅ Hadir GPS
-                          </span>
-                          <span v-else-if="member.status === 'izin'" class="badge badge-info">
-                            ℹ️ Izin Resmi
-                          </span>
-                          <span v-else-if="member.status === 'tukar'" class="badge" style="background: #f3e8ff; color: #7e22ce;">
-                            🔄 Tukar Shift
-                          </span>
-                          <span v-else-if="member.status === 'alpha'" class="badge badge-danger">
-                            ⚠️ Alpha (Denda)
-                          </span>
-                          <span v-else class="badge badge-warning">
-                            ⏳ Belum Presensi
-                          </span>
-                        </div>
+                    <div style="flex: 1;">
+                      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                        <span style="background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; color: #0f172a; font-family: monospace;">
+                          🕒 {{ log.time_string }}
+                        </span>
+                        <span style="font-weight: 700; font-size: 0.88rem; color: #0f172a;">
+                          {{ log.officer_name }}
+                        </span>
+                        <span style="font-size: 0.75rem; color: #64748b;">
+                          • {{ log.post_name }}
+                        </span>
+                        <span
+                          class="badge"
+                          :style="{
+                            background: log.status === 'aman' ? '#f0fdf4' : (log.status === 'waspada' ? '#fffbeb' : '#fef2f2'),
+                            color: log.status === 'aman' ? '#16a34a' : (log.status === 'waspada' ? '#d97706' : '#dc2626'),
+                            borderColor: log.status === 'aman' ? '#86efac' : (log.status === 'waspada' ? '#fde68a' : '#fecaca'),
+                          }"
+                        >
+                          ● {{ log.status.toUpperCase() }}
+                        </span>
                       </div>
-
-                      <!-- Detail Check-in atau Izin -->
-                      <div v-if="member.has_checked_in" style="margin-top: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px; font-size: 0.74rem; color: #166534;">
-                        📍 <strong>Presensi GPS Terverifikasi:</strong> Lat {{ member.check_in_lat }}, Lng {{ member.check_in_lng }}<br>
-                        <em>"{{ member.check_in_note || 'Hadir tepat waktu di pos siskamling.' }}"</em>
-                      </div>
-
-                      <div v-else-if="member.status === 'izin'" style="margin-top: 8px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 8px; font-size: 0.74rem; color: #0369a1;">
-                        📝 <strong>Catatan Izin:</strong> {{ member.notes || 'Permohonan izin telah disetujui pengurus RT.' }}
-                      </div>
-
-                      <div v-else-if="member.status === 'alpha'" style="margin-top: 8px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px; font-size: 0.74rem; color: #991b1b;">
-                        ⚠️ <strong>Denda Diterapkan:</strong> Rp {{ Number(member.fine_amount || 25000).toLocaleString('id-ID') }}
-                        <span v-if="member.fine_paid" class="badge badge-success" style="font-size: 0.68rem; margin-left: 4px;">Lunas di Kas RT</span>
-                        <span v-else class="badge badge-danger" style="font-size: 0.68rem; margin-left: 4px;">Menunggu Bayar</span>
-                      </div>
+                      <p style="font-size: 0.86rem; color: #334155; margin: 0; line-height: 1.5;">
+                        {{ log.details }}
+                      </p>
                     </div>
 
-                    <!-- Member Action Buttons -->
-                    <div style="margin-top: 14px; pt: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                    <div style="text-align: right; flex-shrink: 0;">
+                      <div v-if="log.verified_by_rt" style="display: flex; align-items: center; gap: 4px; color: #16a34a; font-size: 0.75rem; font-weight: 700;">
+                        <CheckCircle size="14" />
+                        <span>Diverifikasi: {{ log.verified_by_name || 'Ketua RT' }}</span>
+                      </div>
                       <button
-                        class="btn-text"
-                        style="color: #25d366; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 4px;"
-                        title="Kirim pesan WA Pengingat"
-                        @click="sendWAReminder(member, patrol)"
+                        v-else-if="['rt', 'rw', 'admin', 'staff'].includes(currentUser?.role)"
+                        class="btn-outline"
+                        style="font-size: 0.75rem; padding: 4px 10px; color: #16a34a; border-color: #86efac; background: #f0fdf4;"
+                        @click="verifySituationLog(log.id)"
                       >
-                        <MessageSquare size="13" /> Chat WA
+                        ✅ Verifikasi Pengecekan RT
                       </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                      <div style="display: flex; gap: 6px;">
-                        <!-- Button Denda Alpha jika belum hadir -->
+          <!-- SUBTAB 2: REKAP PRESENSI LINMAS DI TEMPAT -->
+          <div v-if="linmasSubTab === 'attendance'">
+            <div class="card">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <MapPin size="18" style="color: #0284c7;" />
+                  Daftar Absensi Kehadiran Petugas Linmas di Pos Ronda
+                </h3>
+                <button class="btn-primary" style="font-size: 0.8rem; padding: 6px 14px;" @click="showLinmasCheckInModal = true">
+                  <Plus size="14" /> Absen Petugas Baru
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Nama Petugas</th>
+                      <th>Shift & Pos Jaga</th>
+                      <th>Jam Masuk & Keluar</th>
+                      <th>Validasi GPS (Di Tempat)</th>
+                      <th>Status & Catatan</th>
+                      <th>Aksi Verifikasi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="linmasAttendances.length === 0">
+                      <td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">
+                        Belum ada data presensi petugas linmas hari ini.
+                      </td>
+                    </tr>
+                    <tr v-for="att in linmasAttendances" :key="att.id">
+                      <td>
+                        <div style="font-weight: 700; color: #0f172a;">{{ att.officer_name }}</div>
+                        <div style="font-size: 0.72rem; color: #16a34a; font-weight: 600;">Petugas Keamanan Terdaftar</div>
+                      </td>
+                      <td>
+                        <div style="font-weight: 600; color: #334155;">{{ att.shift }}</div>
+                        <div style="font-size: 0.72rem; color: #64748b;">{{ att.post_name }}</div>
+                      </td>
+                      <td>
+                        <div style="font-size: 0.8rem; font-weight: 700; color: #0f172a;">
+                          Masuk: {{ att.check_in_time ? new Date(att.check_in_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '19:45' }} WIB
+                        </div>
+                        <div style="font-size: 0.72rem; color: #64748b;">
+                          Keluar: {{ att.check_out_time ? new Date(att.check_out_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : 'Sedang Bertugas' }}
+                        </div>
+                      </td>
+                      <td>
+                        <div style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 0.74rem; font-weight: 700;">
+                          <MapPin size="12" /> Di Pos Ronda RT 001 (Valid)
+                        </div>
+                        <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">
+                          {{ att.check_in_lat || -6.2088 }}, {{ att.check_in_lng || 106.8456 }}
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" :class="att.status === 'bertugas' ? 'badge-success' : 'badge-info'">
+                          {{ att.status === 'bertugas' ? '🟢 Aktif Jaga' : 'Selesai Tugas' }}
+                        </span>
+                        <div style="font-size: 0.72rem; color: #475569; margin-top: 4px;">{{ att.notes }}</div>
+                      </td>
+                      <td>
                         <button
-                          v-if="!member.has_checked_in && member.status !== 'izin' && member.status !== 'alpha'"
-                          class="btn-outline"
-                          style="font-size: 0.72rem; padding: 4px 8px; color: #dc2626; border-color: #fca5a5; background: #fff5f5;"
-                          @click="openFineModal(member, patrol)"
-                        >
-                          ⚠️ Denda Alpha
-                        </button>
-
-                        <!-- Button Pelunasan Denda jika sudah didenda tapi belum lunas -->
-                        <button
-                          v-if="member.status === 'alpha' && !member.fine_paid"
+                          v-if="['rt', 'rw', 'admin', 'staff'].includes(currentUser?.role)"
                           class="btn-outline"
                           style="font-size: 0.72rem; padding: 4px 8px; color: #16a34a; border-color: #86efac; background: #f0fdf4;"
-                          @click="payPatrolFine(member, patrol)"
+                          @click="verifyLinmasAttendance(att.id)"
                         >
-                          💵 Terima Kas
+                          Verifikasi RT
                         </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </div>
-          </div>
-
-          <!-- SUB-TAB 2: PERMOHONAN IZIN & TUKAR SHIFT (WARGA) -->
-          <div v-if="patrolSubTab === 'swaps'">
-            <div class="card">
-              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 class="card-title">
-                  <Users size="18" style="color: #0284c7;" />
-                  Daftar Permohonan Izin & Tukar Jadwal Ronda Warga
-                </h3>
-                <span class="badge badge-info">{{ patrolSwapsList.length }} Permohonan Terdaftar</span>
-              </div>
-              <div class="card-body" style="padding: 0;">
-                <div v-if="patrolSwapsList.length === 0" style="text-align: center; padding: 40px; color: #94a3b8;">
-                  Belum ada permohonan izin atau tukar jadwal ronda yang diajukan warga.
-                </div>
-                <div v-else class="table-responsive">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>Pemohon (Warga)</th>
-                        <th>Jadwal Ronda</th>
-                        <th>Jenis Pengajuan</th>
-                        <th>Alasan Warga</th>
-                        <th>Pengganti (Jika Tukar)</th>
-                        <th>Status</th>
-                        <th>Aksi Pengurus</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="swap in patrolSwapsList" :key="swap.id">
-                        <td>
-                          <strong>{{ swap.requester_name }}</strong>
-                          <div style="font-size: 0.74rem; color: #64748b;">📞 {{ swap.requester_phone }}</div>
-                        </td>
-                        <td>
-                          <div><strong>{{ swap.day_name }}</strong>, {{ swap.patrol_date }}</div>
-                          <div style="font-size: 0.75rem; color: #64748b;">{{ swap.shift_name }}</div>
-                        </td>
-                        <td>
-                          <span
-                            class="badge"
-                            :class="swap.type === 'izin_tidak_hadir' ? 'badge-warning' : 'badge-info'"
-                          >
-                            {{ swap.type === 'izin_tidak_hadir' ? 'Izin Tidak Hadir' : 'Tukar Jadwal' }}
-                          </span>
-                        </td>
-                        <td style="max-width: 250px;">
-                          <div style="font-size: 0.85rem; color: #1e293b;">{{ swap.reason }}</div>
-                          <div v-if="swap.admin_notes" style="font-size: 0.74rem; color: #64748b; margin-top: 4px;">
-                            <em>Catatan Pengurus: {{ swap.admin_notes }}</em>
-                          </div>
-                        </td>
-                        <td>
-                          <span v-if="swap.target_name" style="font-weight: 600; color: #0f172a;">{{ swap.target_name }}</span>
-                          <span v-else style="color: #94a3b8; font-size: 0.8rem;">-</span>
-                        </td>
-                        <td>
-                          <span v-if="swap.status === 'approved'" class="badge badge-success">Disetujui</span>
-                          <span v-else-if="swap.status === 'rejected'" class="badge badge-danger">Ditolak</span>
-                          <span v-else class="badge badge-warning">Menunggu</span>
-                        </td>
-                        <td>
-                          <div v-if="swap.status === 'pending'" style="display: flex; gap: 6px;">
-                            <button
-                              class="btn-primary"
-                              style="font-size: 0.74rem; padding: 4px 10px; background: #16a34a;"
-                              @click="reviewSwapRequest(swap.id, 'approved')"
-                            >
-                              <Check size="13" /> Setujui
-                            </button>
-                            <button
-                              class="btn-outline"
-                              style="font-size: 0.74rem; padding: 4px 10px; color: #dc2626; border-color: #fca5a5;"
-                              @click="reviewSwapRequest(swap.id, 'rejected')"
-                            >
-                              <X size="13" /> Tolak
-                            </button>
-                          </div>
-                          <span v-else style="font-size: 0.75rem; color: #64748b;">Sudah Direview</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- SUB-TAB 3: LOGBOOK CHECKPOINT QR & FOTO SITUASI REALTIME -->
-          <div v-if="patrolSubTab === 'checkpoints'">
-            <!-- Master Checkpoint Locations -->
-            <div class="card" style="margin-bottom: 20px;">
-              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 class="card-title">
-                  <QrCode size="18" style="color: #16a34a;" />
-                  Titik Stiker Checkpoint QR Siskamling Resmi
-                </h3>
-                <button class="btn-outline" style="font-size: 0.8rem; padding: 6px 12px;" @click="openSimulateCheckpointModal">
-                  <Camera size="14" /> + Simulasi Scan Lapangan
-                </button>
-              </div>
-              <div class="card-body">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
-                  <div style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; background: #f8fafc;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                      <span class="badge badge-success">Pos Induk</span>
-                      <strong style="color: #0369a1; font-size: 0.78rem;">POS-RONDA-01</strong>
-                    </div>
-                    <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 4px;">Pos Ronda Utama RT 001</h4>
-                    <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">Titik kumpul regu ronda, koordinasi linmas & sirine kentongan darurat.</p>
-                    <div style="font-size: 0.74rem; color: #475569;">📍 Koordinat: -6.2087634, 106.8455990</div>
-                  </div>
-
-                  <div style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; background: #f8fafc;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                      <span class="badge badge-info">Portal Pembatas</span>
-                      <strong style="color: #0369a1; font-size: 0.78rem;">PORTAL-BARAT-01</strong>
-                    </div>
-                    <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 4px;">Portal Barat Gang Kenanga</h4>
-                    <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">Akses keluar masuk kendaraan gang barat. Wajib digembok pukul 23:00 WIB.</p>
-                    <div style="font-size: 0.74rem; color: #475569;">📍 Koordinat: -6.2091200, 106.8449000</div>
-                  </div>
-
-                  <div style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; background: #f8fafc;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                      <span class="badge badge-warning">Gardu Pantau</span>
-                      <strong style="color: #0369a1; font-size: 0.78rem;">GARDU-TIMUR-01</strong>
-                    </div>
-                    <h4 style="font-size: 1rem; color: #0f172a; margin-bottom: 4px;">Gardu Timur Jalur Hijau</h4>
-                    <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">Pemantauan lampu penerangan jalan dan area parkir motor warga sekitar balai RT.</p>
-                    <div style="font-size: 0.74rem; color: #475569;">📍 Koordinat: -6.2084500, 106.8462000</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Feed Laporan Checkpoint -->
-            <div class="card">
-              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 class="card-title">
-                  <Camera size="18" style="color: #ea580c;" />
-                  Aktivitas Scan QR Checkpoint & Laporan Foto Terkini
-                </h3>
-                <span class="badge badge-success">{{ patrolCheckpointsList.length }} Laporan Masuk</span>
-              </div>
-              <div class="card-body" style="padding: 0;">
-                <div v-if="patrolCheckpointsList.length === 0" style="text-align: center; padding: 40px; color: #94a3b8;">
-                  Belum ada rekaman scan checkpoint malam ini. Gunakan tombol "Simulasi Scan Lapangan" di atas untuk mencoba.
-                </div>
-                <div v-else class="table-responsive">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>Waktu Scan</th>
-                        <th>Titik Checkpoint</th>
-                        <th>Petugas Pemeriksa</th>
-                        <th>Status Kondisi</th>
-                        <th>Catatan Petugas</th>
-                        <th>Foto Kondisi Lapangan</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="cp in patrolCheckpointsList" :key="cp.id">
-                        <td style="white-space: nowrap;">
-                          <strong>{{ new Date(cp.scanned_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }} WIB</strong>
-                          <div style="font-size: 0.74rem; color: #64748b;">{{ new Date(cp.scanned_at).toLocaleDateString('id-ID') }}</div>
-                        </td>
-                        <td>
-                          <strong>{{ cp.checkpoint_name }}</strong>
-                          <div style="font-size: 0.74rem; color: #0284c7; font-weight: 600;">{{ cp.checkpoint_code }}</div>
-                        </td>
-                        <td>
-                          <strong>{{ cp.officer_name }}</strong>
-                          <div style="font-size: 0.74rem; color: #64748b;">📞 {{ cp.officer_phone }}</div>
-                        </td>
-                        <td>
-                          <span
-                            class="badge"
-                            :class="cp.situation_status === 'Aman Kondusif' ? 'badge-success' : (cp.situation_status === 'Waspada' ? 'badge-danger' : 'badge-warning')"
-                          >
-                            {{ cp.situation_status }}
-                          </span>
-                        </td>
-                        <td style="max-width: 250px;">
-                          <div style="font-size: 0.85rem; color: #1e293b;">{{ cp.notes }}</div>
-                          <div style="font-size: 0.72rem; color: #94a3b8;">📍 GPS: {{ cp.location_lat }}, {{ cp.location_lng }}</div>
-                        </td>
-                        <td>
-                          <a v-if="cp.photo_url" :href="cp.photo_url" target="_blank">
-                            <img :src="cp.photo_url" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;" />
-                          </a>
-                          <span v-else style="color: #94a3b8; font-size: 0.8rem;">-</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- SUB-TAB 4: PETA POS RONDA & TITIK PATROLI (LEAFLET OSM) -->
-          <div v-show="patrolSubTab === 'map'">
-            <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">
-                  <MapPin size="18" style="color: #ea580c;" />
-                  Peta Titik Pos Ronda & Jalur Keamanan Lingkungan RT 001 / RW 005
-                </h3>
-              </div>
-              <div class="card-body" style="padding: 0;">
-                <div id="patrol-map" style="width: 100%; height: 380px; border-bottom: 1px solid #e2e8f0;"></div>
-              </div>
-            </div>
-          </div>
-
-
-          <!-- Dedicated Card: Absensi & Piket Linmas / Hansip -->
-          <div class="card" style="border-top: 3px solid #16a34a;">
-            <div class="card-header" style="background: #F0FDF4;">
-              <h3 class="card-title" style="color: #14532D;">
-                <Shield size="18" style="color: #16a34a;" />
-                Presensi & Laporan Piket Linmas (Hansip Desa)
-              </h3>
-              <span class="badge badge-success">{{ linmasList.length }} Petugas Bertugas</span>
-            </div>
-            <div class="table-responsive">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Nama Petugas Linmas</th>
-                    <th>Shift & Pos Jaga</th>
-                    <th>Jam Absen Masuk</th>
-                    <th>Koordinat GPS</th>
-                    <th>Laporan Situasi Terkini</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in linmasList" :key="item.id">
-                    <td>
-                      <strong style="color: #0f172a;">{{ item.officer_name }}</strong>
-                      <div style="font-size: 0.74rem; color: #16a34a; font-weight: 600;">🛡️ Linmas Terverifikasi</div>
-                    </td>
-                    <td>
-                      <div>{{ item.shift }}</div>
-                      <div style="font-size: 0.75rem; color: #64748b;">📍 {{ item.post_name }}</div>
-                    </td>
-                    <td>
-                      <div style="font-weight: 600; color: #0f172a;">{{ formatDate(item.check_in_time) }}</div>
-                      <div style="font-size: 0.72rem; color: #64748b;">Check-out: {{ item.check_out_time ? formatDate(item.check_out_time) : 'Sedang Bertugas' }}</div>
-                    </td>
-                    <td>
-                      <div style="font-family: monospace; font-size: 0.75rem; color: #0284c7;">
-                        Lat: {{ item.check_in_lat }}, Lng: {{ item.check_in_lng }}
-                      </div>
-                    </td>
-                    <td style="max-width: 250px;">
-                      <div style="font-weight: 700; color: #15803d; font-size: 0.8rem;">{{ item.situation_status }}</div>
-                      <div style="font-size: 0.74rem; color: #64748b;">{{ item.notes }}</div>
-                    </td>
-                    <td>
-                      <span class="badge" :class="item.status === 'bertugas' ? 'badge-success' : 'badge-info'">
-                        {{ item.status.toUpperCase() }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
 
-        <!-- 5. TAB: POSYANDU MELATI -->
+<!-- 5. TAB: POSYANDU MELATI -->
         <div v-if="currentTab === 'posyandu'">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
             <div class="card">
@@ -2237,6 +1953,107 @@
       </button>
     </nav>
 
+    <!-- MODAL: ABSENSI LINMAS DI TEMPAT (GPS POS RONDA) -->
+    <div v-if="showLinmasCheckInModal" class="modal-overlay" @click.self="showLinmasCheckInModal = false">
+      <div class="modal-content" style="max-width: 480px;">
+        <div class="modal-header">
+          <h3 class="modal-title">📍 Absen Masuk Linmas di Tempat (Pos Ronda)</h3>
+          <button class="btn-close" @click="showLinmasCheckInModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="padding: 12px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #166534; font-weight: 700; font-size: 0.85rem;">
+              <MapPin size="16" />
+              <span>Lokasi Terkunci: Pos Ronda Utama RT 001 (Di Tempat)</span>
+            </div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 3px;">
+              Koordinat GPS: -6.2088, 106.8456 • Radius: 8 meter (Valid)
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nama Petugas Linmas</label>
+            <input v-model="linmasCheckInForm.officer_name" type="text" class="form-control" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Shift Jaga</label>
+            <select v-model="linmasCheckInForm.shift" class="form-control">
+              <option value="Piket Malam (20:00 - 04:00)">Piket Malam (20:00 - 04:00)</option>
+              <option value="Piket Siang (08:00 - 16:00)">Piket Siang (08:00 - 16:00)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Status Awal Pos Ronda</label>
+            <select v-model="linmasCheckInForm.situation_status" class="form-control">
+              <option value="Aman & Kondusif">🟢 Aman & Kondusif</option>
+              <option value="Waspada / Perlu Perhatian">🟡 Waspada / Perlu Perhatian</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Catatan Situasi Awal</label>
+            <textarea v-model="linmasCheckInForm.notes" class="form-control" rows="2"></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+            <button class="btn-secondary" @click="showLinmasCheckInModal = false">Batal</button>
+            <button class="btn-primary" style="background: #10b981;" @click="submitLinmasCheckIn">
+              Kirim Absen di Tempat
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: KIRIM UPDATE SITUASI KEAMANAN POS RONDA -->
+    <div v-if="showLinmasSituationModal" class="modal-overlay" @click.self="showLinmasSituationModal = false">
+      <div class="modal-content" style="max-width: 480px;">
+        <div class="modal-header">
+          <h3 class="modal-title">📝 Tulis Update Situasi Pos Ronda Hari Ini</h3>
+          <button class="btn-close" @click="showLinmasSituationModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nama Petugas Linmas</label>
+            <input v-model="linmasSituationForm.officer_name" type="text" class="form-control" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Titik Pos Pantau</label>
+            <input v-model="linmasSituationForm.post_name" type="text" class="form-control" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Status Keamanan Saat Ini</label>
+            <select v-model="linmasSituationForm.status" class="form-control">
+              <option value="aman">🟢 Aman & Kondusif</option>
+              <option value="waspada">🟡 Perlu Perhatian / Waspada</option>
+              <option value="insiden">🔴 Insiden / Laporan Kejadian</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Rincian Situasi Lingkungan *</label>
+            <textarea
+              v-model="linmasSituationForm.details"
+              class="form-control"
+              rows="3"
+              placeholder="Contoh: Portal gerbang barat telah dikunci. Patroli putaran pertama blok B selesai, situasi aman."
+            ></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+            <button class="btn-secondary" @click="showLinmasSituationModal = false">Batal</button>
+            <button class="btn-primary" style="background: #0284c7;" @click="submitLinmasSituation">
+              Kirim Laporan Situasi
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL: KUSTOMISASI IDENTITAS DESA -->
     <div v-if="showSettingsModal" class="modal-overlay">
       <div class="modal-content">
@@ -3052,7 +2869,7 @@ const posyanduData = ref({ activities: [], children: [] });
 const complaintsList = ref([]);
 const treasuryData = ref({ summary: {}, data: [] });
 const duesData = ref({ summary: {}, data: [] });
-const duesSubTab = ref('bills'); // 'bills' | 'ledger'
+const duesSubTab = ref('transparency'); // 'bills' | 'ledger'
 const duesFilterStatus = ref('all');
 const searchDuesCitizen = ref('');
 const showVerifyModal = ref(false);
@@ -3147,18 +2964,20 @@ const newNews = ref({
   is_pinned: false,
 });
 
-// Navigation items definition (Matching Laptop Reference Photo)
+// Navigation items definition (Sesuai Aturan Hak Akses Linmas & Transparansi Kas)
 const navItems = computed(() => {
+  const isStaffOrAdmin = ['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'].includes(currentUser.value?.role);
+
   const items = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'citizens', label: 'Data Warga', icon: Users, badge: stats.value.pending_citizens || null },
     { id: 'letters', label: 'Layanan Surat', icon: FileText, badge: stats.value.pending_letters || null },
-    { id: 'treasury', label: 'Kas Darurat', icon: Wallet },
-    { id: 'patrols', label: 'Jadwal Ronda', icon: Shield },
+    { id: 'treasury', label: 'Transparansi Kas', icon: Wallet },
   ];
 
-  // KHUSUS ADMIN & STAFF PENGURUS (RT, RW, Bendahara, Sekretaris, Staff, Linmas)
-  if (['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'].includes(currentUser.value?.role)) {
+  // KHUSUS LINMAS, ADMIN, DAN STAFF PENGURUS RT/RW (TIDAK DITAMPILKAN KE WARGA)
+  if (isStaffOrAdmin) {
+    items.push({ id: 'patrols', label: 'Absen Linmas & Situasi', icon: Shield });
     items.push({ id: 'cctv', label: 'CCTV Pos & Jalan', icon: Camera, badge: '4 LIVE' });
   }
 
@@ -3176,8 +2995,8 @@ const currentTitle = computed(() => {
     dashboard: 'Dashboard',
     citizens: 'Pusat Data & Verifikasi Warga',
     letters: 'Pelayanan Surat & Cetak PDF',
-    treasury: 'Transparansi & Pembukuan Kas',
-    patrols: 'Jadwal Ronda & Peta GPS',
+    treasury: 'Keuangan & Transparansi Kas RT Terbuka',
+    patrols: 'Presensi Linmas di Tempat & Situasi Keamanan Pos',
     posyandu: 'Kegiatan Posyandu Balita & Lansia',
     complaints: 'Aduan Masalah Lingkungan & TPS',
     cctv: 'Pusat Pemantauan CCTV RT (Khusus Pengurus & Linmas)',

@@ -2103,3 +2103,162 @@ Route::get('/receipts/{receiptNumber}/print', function ($receiptNumber) {
 
     return view('receipt_print', compact('payment'));
 });
+
+
+// ===========================================================================
+// MODUL KHUSUS ABSEN LINMAS & UPDATE SITUASI KABAR HARI INI (DI TEMPAT)
+// KHUSUS PETUGAS LINMAS, ADMIN (RT/RW), DAN STAFF PENGURUS (DIBLOKIR UNTUK WARGA)
+// ===========================================================================
+
+if (!Schema::hasTable('linmas_situation_logs')) {
+    Schema::create('linmas_situation_logs', function ($table) {
+        $table->id();
+        $table->string('officer_name');
+        $table->string('post_name')->default('Pos Pantau Utama RT 001');
+        $table->string('time_string');
+        $table->string('status')->default('aman'); // aman, waspada, insiden
+        $table->text('details');
+        $table->boolean('verified_by_rt')->default(false);
+        $table->string('verified_by_name')->nullable();
+        $table->timestamp('verified_at')->nullable();
+        $table->timestamps();
+    });
+
+    DB::table('linmas_situation_logs')->insert([
+        [
+            'officer_name' => 'Sujatmo (Komandan Linmas)',
+            'post_name' => 'Pos Pantau Utama RT 001 / RW 005',
+            'time_string' => '23:15 WIB',
+            'status' => 'aman',
+            'details' => 'Portal gerbang utama telah ditutup dan digembok rapat. Lampu penerangan jalan gang melati 1-4 menyala normal.',
+            'verified_by_rt' => true,
+            'verified_by_name' => 'H. Sulaiman (Ketua RT 001)',
+            'verified_at' => now()->subHours(1),
+            'created_at' => now()->subHours(2),
+            'updated_at' => now(),
+        ],
+        [
+            'officer_name' => 'Dedi Iskandar (Anggota Linmas)',
+            'post_name' => 'Pos Gerbang Barat',
+            'time_string' => '01:40 WIB',
+            'status' => 'aman',
+            'details' => 'Patroli putaran pertama keliling blok A, B, C dan perbatasan rel kereta. Situasi sepi, kondusif, dan terkendali.',
+            'verified_by_rt' => true,
+            'verified_by_name' => 'H. Sulaiman (Ketua RT 001)',
+            'verified_at' => now()->subMinutes(30),
+            'created_at' => now()->subHours(1),
+            'updated_at' => now(),
+        ],
+        [
+            'officer_name' => 'Sujatmo (Komandan Linmas)',
+            'post_name' => 'Pos Pantau Utama RT 001',
+            'time_string' => '03:30 WIB',
+            'status' => 'aman',
+            'details' => 'Pengecekan area parkiran bersama dan bank sampah TPS. Nihil aktivitas mencurigakan.',
+            'verified_by_rt' => false,
+            'verified_by_name' => null,
+            'verified_at' => null,
+            'created_at' => now()->subMinutes(15),
+            'updated_at' => now(),
+        ],
+    ]);
+}
+
+// 1. GET /api/linmas/situation-logs - Daftar Laporan Situasi Hari Ini (Buku Mutasi Keamanan)
+Route::get('/linmas/situation-logs', function (Request $request) {
+    $role = strtolower($request->query('role', $request->header('X-User-Role', '')));
+    if ($role === 'warga') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Akses Terbatas: Log situasi keamanan pos ronda hanya untuk Linmas dan Pengurus RT.',
+        ], 403);
+    }
+
+    $logs = DB::table('linmas_situation_logs')
+        ->orderBy('created_at', 'desc')
+        ->limit(25)
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'data' => $logs,
+    ]);
+});
+
+// 2. POST /api/linmas/situation-logs - Kirim Update Situasi Hari Ini
+Route::post('/linmas/situation-logs', function (Request $request) {
+    $role = strtolower($request->header('X-User-Role', $request->input('role', '')));
+    if ($role === 'warga') {
+        return response()->json(['success' => false, 'message' => 'Akses Ditolak'], 403);
+    }
+
+    $validated = $request->validate([
+        'officer_name' => 'required|string',
+        'post_name' => 'nullable|string',
+        'status' => 'required|in:aman,waspada,insiden',
+        'details' => 'required|string',
+    ]);
+
+    $id = DB::table('linmas_situation_logs')->insertGetId([
+        'officer_name' => $validated['officer_name'],
+        'post_name' => $validated['post_name'] ?? 'Pos Pantau Utama RT 001',
+        'time_string' => date('H:i') . ' WIB',
+        'status' => $validated['status'],
+        'details' => $validated['details'],
+        'verified_by_rt' => false,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Laporan situasi keamanan pos ronda berhasil dikirimkan.',
+        'data' => DB::table('linmas_situation_logs')->where('id', $id)->first(),
+    ], 201);
+});
+
+// 3. POST /api/linmas/verify-log/{id} - Verifikasi Pengecekan oleh Ketua RT
+Route::post('/linmas/verify-log/{id}', function ($id, Request $request) {
+    $adminName = $request->input('admin_name', 'H. Sulaiman (Ketua RT 001)');
+    DB::table('linmas_situation_logs')->where('id', $id)->update([
+        'verified_by_rt' => true,
+        'verified_by_name' => $adminName,
+        'verified_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Laporan situasi pos telah berhasil diverifikasi oleh Ketua RT.',
+        'data' => DB::table('linmas_situation_logs')->where('id', $id)->first(),
+    ]);
+});
+
+// 4. POST /api/linmas/verify-attendance/{id} - Verifikasi Absensi Petugas di Tempat
+Route::post('/linmas/verify-attendance/{id}', function ($id, Request $request) {
+    DB::table('linmas_attendances')->where('id', $id)->update([
+        'situation_status' => 'Diverifikasi Hadir di Tempat (Pos Ronda RT 001)',
+        'updated_at' => now(),
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Presensi petugas linmas berhasil diverifikasi oleh Ketua RT.',
+    ]);
+});
+
+// 5. GET /api/treasury/lpj/print - Cetak LPJ Transparansi Keuangan Terbuka PDF
+Route::get('/treasury/lpj/print', function () {
+    $transactions = DB::table('treasury_transactions')
+        ->join('users', 'treasury_transactions.recorded_by', '=', 'users.id')
+        ->select('treasury_transactions.*', 'users.name as recorder_name')
+        ->orderBy('transaction_date', 'desc')
+        ->limit(10)
+        ->get();
+
+    $totalIncome = (float)DB::table('treasury_transactions')->where('type', 'pemasukan')->sum('amount');
+    $totalExpense = (float)DB::table('treasury_transactions')->where('type', 'pengeluaran')->sum('amount');
+    $balance = $totalIncome - $totalExpense;
+
+    return view('treasury_lpj_print', compact('transactions', 'totalIncome', 'totalExpense', 'balance'));
+});

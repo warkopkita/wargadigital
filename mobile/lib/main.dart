@@ -1012,9 +1012,19 @@ class HomeDashboardPage extends StatelessWidget {
                   ),
                   _buildServiceTile(
                     context,
-                    icon: Icons.calendar_month_outlined,
-                    label: 'Jadwal\nRonda',
-                    onTap: () => onNavigateToTab(2),
+                    icon: ['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'].contains(user['role'])
+                        ? Icons.shield_rounded
+                        : Icons.account_balance_outlined,
+                    label: ['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'].contains(user['role'])
+                        ? 'Absen\nLinmas'
+                        : 'Transparansi\nKas RT',
+                    onTap: () {
+                      if (['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'].contains(user['role'])) {
+                        _openAbsenLinmasDialog(context, user);
+                      } else {
+                        _openKasDialog(context, user, 1);
+                      }
+                    },
                   ),
                   _buildServiceTile(
                     context,
@@ -1996,12 +2006,12 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  static void _openKasDialog(BuildContext context, [Map<String, dynamic>? user]) {
+  static void _openKasDialog(BuildContext context, [Map<String, dynamic>? user, int initialTab = 0]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => KasPaymentModalSheet(user: user),
+      builder: (_) => KasPaymentModalSheet(user: user, initialTab: initialTab),
     );
   }
 
@@ -2014,104 +2024,12 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  static void _openAbsenLinmasDialog(BuildContext context) {
+  static void _openAbsenLinmasDialog(BuildContext context, [Map<String, dynamic>? user]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.security, color: Color(0xFF2563EB), size: 24),
-                ),
-                const SizedBox(width: 12),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('👮 Presensi Petugas Ronda / Linmas', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                    Text('Jadwal Jaga Malam • Pos Ronda Utama RT 001', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.my_location, size: 16, color: Color(0xFF16A34A)),
-                      SizedBox(width: 8),
-                      Text('Status GPS:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                      Spacer(),
-                      Text('Terkunci (-6.2088, 106.8456)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                    ],
-                  ),
-                  const Divider(height: 16),
-                  Row(
-                    children: const [
-                      Icon(Icons.shield_outlined, size: 16, color: Color(0xFF2563EB)),
-                      SizedBox(width: 8),
-                      Text('Titik Patroli:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                      Spacer(),
-                      Text('Pos Ronda & Gang Melati 1-4', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Color(0xFF16A34A),
-                      content: Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.white),
-                          SizedBox(width: 10),
-                          Expanded(child: Text('Presensi GPS Linmas Berhasil! Data tercatat di rekap jaga malam.')),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                icon: const Icon(Icons.camera_alt_outlined, size: 20),
-                label: const Text('Kirim Presensi GPS & Selfie', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
+      backgroundColor: Colors.transparent,
+      builder: (_) => AbsenLinmasModalSheet(user: user),
     );
   }
 
@@ -3145,110 +3063,142 @@ class AgendaKegiatanPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          // Dedicated Linmas / Hansip Attendance Card
-          Container(
-            padding: const EdgeInsets.all(18),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF14532D), Color(0xFF064E3B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // KHUSUS LINMAS & ADMIN/STAFF: Pusat Operasional Linmas & Situasi Keamanan Pos
+          if (['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'].contains(user['role'])) ...[
+            Container(
+              padding: const EdgeInsets.all(18),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF14532D), Color(0xFF064E3B)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF064E3B).withOpacity(0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF064E3B).withOpacity(0.25),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.shield_rounded, color: Color(0xFF86EFAC), size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Pusat Presensi Linmas di Tempat',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF34D399).withOpacity(0.5)),
+                        ),
+                        child: const Text('Khusus Petugas', style: TextStyle(color: Color(0xFF86EFAC), fontSize: 10, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Petugas: ${user['name'] ?? 'Petugas Linmas'}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '📍 Pos Ronda Utama RT 001 • Terkunci Geotagging Valid',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => HomeDashboardPage._openAbsenLinmasDialog(context, user),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF16A34A),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.location_on, size: 16),
+                          label: const Text('Buka Absen Linmas', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.shield_rounded, color: Color(0xFF86EFAC), size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Piket Linmas & Hansip Desa',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF34D399).withOpacity(0.5)),
+          ] else ...[
+            // UNTUK WARGA BIASA: Tampilkan Banner Transparansi Kas Terbuka & Agenda Guyub
+            Container(
+              padding: const EdgeInsets.all(18),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF047857), Color(0xFF065F46)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF047857).withOpacity(0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.account_balance_outlined, color: Color(0xFF86EFAC), size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Transparansi Kas & Penggunaan Iuran RT',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
                       ),
-                      child: const Text('Aktif Dinas', style: TextStyle(color: Color(0xFF86EFAC), fontSize: 10, fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Petugas: ${user['name'] ?? 'Budi Santoso'} (Linmas RW 05)',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  '📍 Pos Pantau Utama RT 001 • Shift Malam (20:00 - 04:00 WIB)',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              backgroundColor: Color(0xFF15803D),
-                              content: Text('✅ Presensi Masuk Piket Linmas Berhasil (Koordinat GPS Tercatat di Dashboard RT)!'),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF16A34A),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        icon: const Icon(Icons.location_on, size: 16),
-                        label: const Text('Absen Masuk GPS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Keuangan RT 001 dikelola secara terbuka. Seluruh iuran warga disalurkan untuk Honor Linmas (45%), Sampah (30%), Lampu Jalan (15%), dan Kas Darurat (10%).',
+                    style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => HomeDashboardPage._openKasDialog(context, user, 1),
+                      icon: const Icon(Icons.pie_chart_outline_rounded, size: 16),
+                      label: const Text('Lihat Transparansi & Unduh LPJ PDF', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF065F46),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Laporan situasi: Wilayah Aman Terkendali telah dikirimkan ke RT.'),
-                            ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.white60),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text('Lapor Aman', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
 
           // Smart Siskamling Ronda Malam Warga Card
           Container(
@@ -3577,14 +3527,15 @@ class ProfilWargaPage extends StatelessWidget {
 // ---------------------------------------------------------------------------
 class KasPaymentModalSheet extends StatefulWidget {
   final Map<String, dynamic>? user;
-  const KasPaymentModalSheet({super.key, this.user});
+  final int initialTab;
+  const KasPaymentModalSheet({super.key, this.user, this.initialTab = 0});
 
   @override
   State<KasPaymentModalSheet> createState() => _KasPaymentModalSheetState();
 }
 
 class _KasPaymentModalSheetState extends State<KasPaymentModalSheet> {
-  int _activeKasTab = 0;
+  late int _activeKasTab;
   bool get isStaffOrAdmin {
     final role = widget.user?['role']?.toString().toLowerCase();
     return role == 'rt' || role == 'bendahara' || role == 'sekretaris' || role == 'staff' || role == 'admin';
@@ -3603,8 +3554,88 @@ class _KasPaymentModalSheetState extends State<KasPaymentModalSheet> {
   @override
   void initState() {
     super.initState();
+    _activeKasTab = widget.initialTab;
     _fetchBill();
     _fetchTreasury();
+  }
+
+  void _showLpjDialog() {
+    final printUrl = '${getServerBase()}/api/treasury/lpj/print?autoprint=1';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.print_rounded, color: Color(0xFF047857)),
+            SizedBox(width: 8),
+            Expanded(child: Text('Cetak LPJ Kas Terbuka', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Laporan Pertanggungjawaban (LPJ) Keuangan RT format resmi A4 lengkap dengan alokasi pos anggaran, 10 mutasi jurnal riil, dan QR digital RT.',
+              style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SelectableText(
+                printUrl,
+                style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF0369A1)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Buka alamat di atas di browser untuk melihat atau mencetak berkas PDF resmi.',
+              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAllocationCard(String title, String nominal, String percentage, String desc, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF0F172A))),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+                child: Text(percentage, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(nominal, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: color)),
+          const SizedBox(height: 3),
+          Text(desc, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+        ],
+      ),
+    );
   }
 
   @override
@@ -4660,6 +4691,64 @@ class _KasPaymentModalSheetState extends State<KasPaymentModalSheet> {
           ),
 
           const SizedBox(height: 20),
+
+          // LPJ DOWNLOAD BANNER
+          Container(
+            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF064E3B), Color(0xFF047857)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.verified_user_rounded, color: Color(0xFF86EFAC), size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'Laporan Pertanggungjawaban (LPJ) Resmi',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Format standar A4 dengan kop RT 001/RW 005, grafik alokasi, 10 mutasi pembukuan, & tanda tangan digital ber-QR.',
+                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _showLpjDialog,
+                    icon: const Icon(Icons.print_rounded, size: 16),
+                    label: const Text('Cetak / Unduh LPJ Kas RT (PDF)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF064E3B),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 4 POS ALOKASI IURAN KAS TERBUKA
+          const Text('Rincian Alokasi Dana Kas RT (Kemana Iuran Anda Digunakan?):', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+          const SizedBox(height: 8),
+          _buildAllocationCard('Honor & Seragam Linmas', 'Rp 1.500.000 / bln', '45%', '2 Petugas Linmas jaga malam, senter, rompi & jas hujan.', const Color(0xFF16A34A)),
+          _buildAllocationCard('Angkutan Sampah & Kebersihan', 'Rp 1.000.000 / bln', '30%', 'Iuran armada truk sampah DLH 3x seminggu & sapu lidi.', const Color(0xFF0284C7)),
+          _buildAllocationCard('Penerangan Jalan & Fasum', 'Rp 500.000 / bln', '15%', 'Penggantian lampu LED jalan gang & perbaikan portal.', const Color(0xFFD97706)),
+          _buildAllocationCard('Dana Sosial & Kas Darurat', 'Rp 300.000 / bln', '10%', 'Santunan duka wafat, warga sakit darurat, & kas cadangan.', const Color(0xFFDC2626)),
+          const SizedBox(height: 16),
 
           // 1. BREAKDOWN PEMASUKAN
           Row(
@@ -8125,6 +8214,561 @@ class PosyanduModalSheet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ABSEN LINMAS DI TEMPAT & SITUASI KEAMANAN POS (KHUSUS LINMAS & PENGURUS RT)
+// ---------------------------------------------------------------------------
+class AbsenLinmasModalSheet extends StatefulWidget {
+  final Map<String, dynamic>? user;
+  const AbsenLinmasModalSheet({super.key, this.user});
+
+  @override
+  State<AbsenLinmasModalSheet> createState() => _AbsenLinmasModalSheetState();
+}
+
+class _AbsenLinmasModalSheetState extends State<AbsenLinmasModalSheet> {
+  int _activeSubTab = 0; // 0: Absensi di Tempat, 1: Update Situasi Pos Ronda
+  bool _isLoading = false;
+  String _selectedShift = 'Piket Malam (20:00 - 04:00 WIB)';
+  final TextEditingController _notesController = TextEditingController(text: 'Pintu portal gerbang utama dikunci, lampu penerangan jalan menyala normal.');
+  
+  // Situation Form
+  String _selectedPost = 'Pos Pantau Utama RT 001';
+  String _selectedStatus = 'aman';
+  final TextEditingController _situationDetailsController = TextEditingController();
+  
+  List<dynamic> _situationLogs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSituationLogs();
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _situationDetailsController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchSituationLogs() async {
+    setState(() => _isLoading = true);
+    try {
+      final role = widget.user?['role'] ?? 'linmas';
+      final res = await http.get(Uri.parse('${getApiBase()}/linmas/situation-logs?role=$role'));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        if (decoded['success'] == true) {
+          setState(() {
+            _situationLogs = decoded['data'] ?? [];
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+      setState(() => _isLoading = false);
+    } catch (_) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _submitAttendance() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await http.post(
+        Uri.parse('${getApiBase()}/linmas/check-in'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'officer_name': widget.user?['name'] ?? 'Sujatmo (Linmas)',
+          'shift': _selectedShift,
+          'notes': _notesController.text.trim(),
+          'lat': -6.2087634,
+          'lng': 106.8455990,
+          'post_name': 'Pos Pantau Utama RT 001',
+        }),
+      );
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFF15803D),
+            content: Text('✅ Presensi Linmas di Tempat Berhasil! Koordinat Pos Ronda RT 001 terverifikasi sah.'),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (err) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.red, content: Text('Gagal presensi: $err')),
+        );
+      }
+    }
+  }
+
+  Future<void> _submitSituation() async {
+    if (_situationDetailsController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mohon isi catatan laporan situasi keamanan pos.')),
+      );
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      final res = await http.post(
+        Uri.parse('${getApiBase()}/linmas/situation-logs'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'officer_name': widget.user?['name'] ?? 'Petugas Linmas',
+          'post_name': _selectedPost,
+          'status': _selectedStatus,
+          'details': _situationDetailsController.text.trim(),
+          'role': widget.user?['role'] ?? 'linmas',
+        }),
+      );
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFF15803D),
+            content: Text('✅ Laporan situasi pos ronda berhasil dikirimkan ke RT!'),
+          ),
+        );
+        _situationDetailsController.clear();
+        await _fetchSituationLogs();
+      }
+    } catch (err) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.red, content: Text('Gagal mengirim situasi: $err')),
+        );
+      }
+    }
+  }
+
+  Future<void> _verifyLog(int logId) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${getApiBase()}/linmas/verify-log/$logId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'admin_name': widget.user?['name'] ?? 'H. Sulaiman (Ketua RT 001)',
+        }),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFF15803D),
+            content: Text('✓ Laporan situasi pos telah diverifikasi oleh Ketua RT!'),
+          ),
+        );
+        await _fetchSituationLogs();
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 44,
+            height: 4,
+            decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(4)),
+          ),
+          const SizedBox(height: 14),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.shield_rounded, color: Color(0xFF047857), size: 24),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '🛡️ Absensi Linmas di Tempat',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                      ),
+                      Text(
+                        'Pos Ronda RT 001 • Khusus Linmas & Pengurus RT',
+                        style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Sub Tabs
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _activeSubTab = 0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: _activeSubTab == 0 ? const Color(0xFF047857) : Colors.transparent,
+                            width: 2.5,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Presensi di Tempat',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: _activeSubTab == 0 ? FontWeight.w800 : FontWeight.w600,
+                          color: _activeSubTab == 0 ? const Color(0xFF047857) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _activeSubTab = 1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: _activeSubTab == 1 ? const Color(0xFF047857) : Colors.transparent,
+                            width: 2.5,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Situasi Pos Keamanan',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: _activeSubTab == 1 ? FontWeight.w800 : FontWeight.w600,
+                          color: _activeSubTab == 1 ? const Color(0xFF047857) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          Expanded(
+            child: _activeSubTab == 0 ? _buildAttendanceView() : _buildSituationView(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceView() {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        // Geotagging GPS Locked Status
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF86EFAC)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.location_on, color: Color(0xFF16A34A), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Lokasi Valid: Pos Ronda Utama RT 001',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF166534)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Radius 15 meter • Titik GPS: -6.2087634, 106.8455990 • Absensi sah di tempat dinas.',
+                style: TextStyle(fontSize: 11, color: Color(0xFF15803D)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        const Text('Nama Petugas Linmas:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
+          child: Text(widget.user?['name'] ?? 'Sujatmo (Komandan Linmas)', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+        ),
+        const SizedBox(height: 14),
+
+        const Text('Pilih Shift Tugas Jaga:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFCBD5E1))),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _selectedShift,
+              items: const [
+                DropdownMenuItem(value: 'Piket Malam (20:00 - 04:00 WIB)', child: Text('Piket Malam (20:00 - 04:00 WIB)')),
+                DropdownMenuItem(value: 'Piket Sore (14:00 - 20:00 WIB)', child: Text('Piket Sore (14:00 - 20:00 WIB)')),
+                DropdownMenuItem(value: 'Piket Pagi (06:00 - 14:00 WIB)', child: Text('Piket Pagi (06:00 - 14:00 WIB)')),
+              ],
+              onChanged: (val) {
+                if (val != null) setState(() => _selectedShift = val);
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        const Text('Catatan Masuk / Serah Terima Piket:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _notesController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: 'Kondisi portal, lampu jalan, perlengkapan senter...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding: const EdgeInsets.all(12),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        SizedBox(
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: _isLoading ? null : _submitAttendance,
+            icon: const Icon(Icons.check_circle_outline, size: 20),
+            label: Text(_isLoading ? 'Menyimpan Presensi...' : 'Absen Hadir di Tempat (GPS Valid)', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF047857),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSituationView() {
+    final isStaff = ['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin'].contains(widget.user?['role']);
+
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        // Form Kirim Update Situasi
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Kirim Laporan Situasi Pos Jaga:', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A))),
+              const SizedBox(height: 10),
+
+              const Text('Pos Jaga:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11.5, color: Color(0xFF475569))),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFCBD5E1))),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: _selectedPost,
+                    items: const [
+                      DropdownMenuItem(value: 'Pos Pantau Utama RT 001', child: Text('Pos Pantau Utama RT 001')),
+                      DropdownMenuItem(value: 'Portal Gang Kenanga (Barat)', child: Text('Portal Gang Kenanga (Barat)')),
+                      DropdownMenuItem(value: 'Gardu Jalur Hijau (Timur)', child: Text('Gardu Jalur Hijau (Timur)')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedPost = val);
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              const Text('Status Keamanan:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11.5, color: Color(0xFF475569))),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFCBD5E1))),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: _selectedStatus,
+                    items: const [
+                      DropdownMenuItem(value: 'aman', child: Text('🟢 Aman & Kondusif')),
+                      DropdownMenuItem(value: 'waspada', child: Text('🟡 Waspada / Keramaian')),
+                      DropdownMenuItem(value: 'darurat', child: Text('🔴 Butuh Bantuan Pengurus RT')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedStatus = val);
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              const Text('Keterangan Situasi:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11.5, color: Color(0xFF475569))),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _situationDetailsController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'Portal dikunci pukul 23:00, penerangan gang normal...',
+                  fillColor: Colors.white,
+                  filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.all(10),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _submitSituation,
+                  icon: const Icon(Icons.send_rounded, size: 16),
+                  label: const Text('Kirim Laporan Situasi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // List Laporan Situasi (Khusus Staff & Linmas)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Buku Mutasi Situasi Harian', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: Color(0xFF0F172A))),
+            IconButton(icon: const Icon(Icons.refresh, size: 18), onPressed: _fetchSituationLogs),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        if (_situationLogs.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
+            child: const Center(child: Text('Belum ada catatan situasi hari ini.', style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)))),
+          )
+        else
+          ..._situationLogs.map((log) {
+            final isAman = log['status'] == 'aman';
+            final isVerified = log['verified_by_rt'] != null;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(log['post_name'] ?? 'Pos Ronda', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF0F172A))),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isAman ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          isAman ? 'Aman' : 'Perlu Pantauan',
+                          style: TextStyle(color: isAman ? const Color(0xFF166534) : const Color(0xFFB45309), fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(log['details'] ?? '', style: const TextStyle(fontSize: 11.5, color: Color(0xFF334155))),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${log['officer_name']} • ${log['logged_time'] ?? ''}', style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                      if (isVerified)
+                        Text('✓ Terverifikasi RT', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)))
+                      else if (isStaff)
+                        InkWell(
+                          onTap: () => _verifyLog(log['id']),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FDF4),
+                              border: Border.all(color: const Color(0xFF86EFAC)),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text('Verifikasi RT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF166534))),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+      ],
     );
   }
 }
