@@ -1046,6 +1046,76 @@ class HomeDashboardPage extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+            // CCTV Quick Access Banner (Khusus Admin & Staff Pengurus RT)
+            if (['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'].contains(user['role'])) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: InkWell(
+                  onTap: () => _openCctvDialog(context, user),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF334155)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF22C55E).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.videocam_rounded, color: Color(0xFF22C55E), size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Pantau CCTV Lingkungan RT',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    '● LIVE',
+                                    style: TextStyle(color: Color(0xFF22C55E), fontSize: 10, fontWeight: FontWeight.w900),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Akses Khusus Pengurus: Gerbang, Pos, Simpang, TPS',
+                                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+
             // Role Priority Action Card (Menyesuaikan dengan role pengguna yang masuk)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1444,19 +1514,44 @@ class HomeDashboardPage extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.4),
             ),
             const SizedBox(height: 14),
-            SizedBox(
-              height: 44,
-              child: ElevatedButton.icon(
-                onPressed: () => _openKasDialog(context, {'role': role}),
-                icon: const Icon(Icons.verified, size: 18),
-                label: const Text('Buka Verifikasi Kas Warga', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEA580C),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openKasDialog(context, {'role': role}),
+                      icon: const Icon(Icons.verified, size: 16),
+                      label: const Text('Verifikasi Kas', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEA580C),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openCctvDialog(context, {'role': role}),
+                      icon: const Icon(Icons.videocam_rounded, size: 16),
+                      label: const Text('CCTV RT', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F172A),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1597,19 +1692,44 @@ class HomeDashboardPage extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.4),
             ),
             const SizedBox(height: 14),
-            SizedBox(
-              height: 44,
-              child: ElevatedButton.icon(
-                onPressed: () => _openSuratDialog(context),
-                icon: const Icon(Icons.assignment_turned_in, size: 18),
-                label: const Text('Persetujuan Surat Pengantar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF166534),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openSuratDialog(context),
+                      icon: const Icon(Icons.assignment_turned_in, size: 16),
+                      label: const Text('Persetujuan Surat', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF166534),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openCctvDialog(context, {'role': role}),
+                      icon: const Icon(Icons.videocam_rounded, size: 16),
+                      label: const Text('CCTV RT', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F172A),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
