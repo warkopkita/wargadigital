@@ -141,7 +141,15 @@
           :class="{ active: currentTab === item.id }"
           @click="selectTab(item.id)"
         >
-          <component :is="item.icon" size="18" />
+          <div
+            class="nav-icon-badge"
+            :style="{
+              background: item.iconGradient,
+              boxShadow: currentTab === item.id ? `0 4px 14px ${item.iconShadow}` : `0 2px 6px rgba(0,0,0,0.22)`
+            }"
+          >
+            <component :is="item.icon" size="16" />
+          </div>
           <span>{{ item.label }}</span>
           <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
         </a>
@@ -368,21 +376,35 @@
           <div class="dashboard-metrics-grid">
             <!-- Card 1: Total Warga -->
             <div class="ref-stat-card">
-              <div class="ref-stat-title">Total Warga</div>
-              <div class="ref-stat-value">
-                {{ stats.total_citizens ? formatNumber(stats.total_citizens) : '1.240' }}
-                <span class="ref-stat-arrow">↗</span>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                <div>
+                  <div class="ref-stat-title">Total Warga</div>
+                  <div class="ref-stat-value">
+                    {{ stats.total_citizens ? formatNumber(stats.total_citizens) : '1.240' }}
+                    <span class="ref-stat-arrow">↗</span>
+                  </div>
+                </div>
+                <div class="stat-icon-3d" style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); box-shadow: 0 8px 18px rgba(59, 130, 246, 0.35);">
+                  <Users size="22" color="#FFFFFF" />
+                </div>
               </div>
               <div class="ref-stat-footer">
-                <span class="ref-stat-subtext">Total {{ stats.total_citizens ? formatNumber(stats.total_citizens) : '1.240' }} Warga</span>
+                <span class="ref-stat-subtext">Total {{ stats.total_citizens ? formatNumber(stats.total_citizens) : '1.240' }} Warga Terdata</span>
               </div>
             </div>
 
             <!-- Card 2: Pengajuan Surat -->
             <div class="ref-stat-card">
-              <div class="ref-stat-title">Pengajuan Surat</div>
-              <div class="ref-stat-value">
-                {{ stats.pending_letters || 18 }}
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                <div>
+                  <div class="ref-stat-title">Pengajuan Surat</div>
+                  <div class="ref-stat-value">
+                    {{ stats.pending_letters || 18 }}
+                  </div>
+                </div>
+                <div class="stat-icon-3d" style="background: linear-gradient(135deg, #F59E0B 0%, #EA580C 100%); box-shadow: 0 8px 18px rgba(245, 158, 11, 0.35);">
+                  <FileText size="22" color="#FFFFFF" />
+                </div>
               </div>
               <div class="ref-stat-footer">
                 <span class="ref-stat-pill" style="background: #FEF3C7; color: #B45309;">Menunggu Proses</span>
@@ -391,9 +413,16 @@
 
             <!-- Card 3: Saldo Kas Darurat -->
             <div class="ref-stat-card">
-              <div class="ref-stat-title">Saldo Kas Darurat</div>
-              <div class="ref-stat-value" style="font-size: 1.65rem;">
-                {{ stats.treasury?.balance ? formatRupiah(stats.treasury.balance) : 'Rp 45.200.000' }}
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                <div>
+                  <div class="ref-stat-title">Saldo Kas Darurat</div>
+                  <div class="ref-stat-value" style="font-size: 1.65rem;">
+                    {{ stats.treasury?.balance ? formatRupiah(stats.treasury.balance) : 'Rp 45.200.000' }}
+                  </div>
+                </div>
+                <div class="stat-icon-3d" style="background: linear-gradient(135deg, #10B981 0%, #047857 100%); box-shadow: 0 8px 18px rgba(16, 185, 129, 0.35);">
+                  <Wallet size="22" color="#FFFFFF" />
+                </div>
               </div>
               <div class="ref-stat-footer">
                 <span class="ref-stat-pill" style="background: #DCFCE7; color: #15803D;">Kas RT Aktif</span>
@@ -2133,7 +2162,9 @@
         :class="{ active: currentTab === 'dashboard' }"
         @click="selectTab('dashboard')"
       >
-        <LayoutDashboard size="20" />
+        <div class="bottom-icon-wrap">
+          <LayoutDashboard size="20" />
+        </div>
         <span>Beranda</span>
       </button>
 
@@ -2142,7 +2173,9 @@
         :class="{ active: currentTab === 'citizens' }"
         @click="selectTab('citizens')"
       >
-        <Users size="20" />
+        <div class="bottom-icon-wrap">
+          <Users size="20" />
+        </div>
         <span>Warga</span>
       </button>
 
@@ -2151,7 +2184,9 @@
         :class="{ active: currentTab === 'letters' }"
         @click="selectTab('letters')"
       >
-        <FileText size="20" />
+        <div class="bottom-icon-wrap">
+          <FileText size="20" />
+        </div>
         <span>Surat</span>
       </button>
 
@@ -2160,7 +2195,9 @@
         :class="{ active: currentTab === 'treasury' }"
         @click="selectTab('treasury')"
       >
-        <Wallet size="20" />
+        <div class="bottom-icon-wrap">
+          <Wallet size="20" />
+        </div>
         <span>Kas RT</span>
       </button>
 
@@ -2168,7 +2205,9 @@
         class="mobile-bottom-item"
         @click="mobileNavOpen = true"
       >
-        <Menu size="20" />
+        <div class="bottom-icon-wrap">
+          <Menu size="20" />
+        </div>
         <span>Menu</span>
       </button>
     </nav>
@@ -3451,22 +3490,80 @@ const navItems = computed(() => {
   const isStaffOrAdmin = ['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'].includes(currentUser.value?.role);
 
   const items = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'citizens', label: 'Data Warga', icon: Users, badge: stats.value.pending_citizens || null },
-    { id: 'letters', label: 'Layanan Surat', icon: FileText, badge: stats.value.pending_letters || null },
-    { id: 'treasury', label: 'Transparansi Kas', icon: Wallet },
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      iconGradient: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
+      iconShadow: 'rgba(16, 185, 129, 0.45)',
+    },
+    {
+      id: 'citizens',
+      label: 'Data Warga',
+      icon: Users,
+      badge: stats.value.pending_citizens || null,
+      iconGradient: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)',
+      iconShadow: 'rgba(59, 130, 246, 0.45)',
+    },
+    {
+      id: 'letters',
+      label: 'Layanan Surat',
+      icon: FileText,
+      badge: stats.value.pending_letters || null,
+      iconGradient: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)',
+      iconShadow: 'rgba(234, 88, 12, 0.45)',
+    },
+    {
+      id: 'treasury',
+      label: 'Transparansi Kas',
+      icon: Wallet,
+      iconGradient: 'linear-gradient(135deg, #22C55E 0%, #15803D 100%)',
+      iconShadow: 'rgba(34, 197, 94, 0.45)',
+    },
   ];
 
   // KHUSUS LINMAS, ADMIN, DAN STAFF PENGURUS RT/RW (TIDAK DITAMPILKAN KE WARGA)
   if (isStaffOrAdmin) {
-    items.push({ id: 'patrols', label: 'Absen Linmas & Situasi', icon: Shield });
-    items.push({ id: 'cctv', label: 'CCTV Pos & Jalan', icon: Camera, badge: '4 LIVE' });
+    items.push({
+      id: 'patrols',
+      label: 'Absen Linmas & Situasi',
+      icon: Shield,
+      iconGradient: 'linear-gradient(135deg, #14B8A6 0%, #0F766E 100%)',
+      iconShadow: 'rgba(20, 184, 166, 0.45)',
+    });
+    items.push({
+      id: 'cctv',
+      label: 'CCTV Pos & Jalan',
+      icon: Camera,
+      badge: '4 LIVE',
+      iconGradient: 'linear-gradient(135deg, #F43F5E 0%, #BE123C 100%)',
+      iconShadow: 'rgba(244, 63, 94, 0.45)',
+    });
   }
 
   items.push(
-    { id: 'posyandu', label: 'Posyandu', icon: HeartPulse },
-    { id: 'complaints', label: 'Aduan Warga', icon: AlertCircle, badge: stats.value.active_complaints || null },
-    { id: 'news', label: 'Kabar Kampung', icon: Megaphone }
+    {
+      id: 'posyandu',
+      label: 'Posyandu',
+      icon: HeartPulse,
+      iconGradient: 'linear-gradient(135deg, #EC4899 0%, #9D174D 100%)',
+      iconShadow: 'rgba(236, 72, 153, 0.45)',
+    },
+    {
+      id: 'complaints',
+      label: 'Aduan Warga',
+      icon: AlertCircle,
+      badge: stats.value.active_complaints || null,
+      iconGradient: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
+      iconShadow: 'rgba(139, 92, 246, 0.45)',
+    },
+    {
+      id: 'news',
+      label: 'Kabar Kampung',
+      icon: Megaphone,
+      iconGradient: 'linear-gradient(135deg, #F97316 0%, #C2410C 100%)',
+      iconShadow: 'rgba(249, 115, 22, 0.45)',
+    }
   );
 
   return items;
