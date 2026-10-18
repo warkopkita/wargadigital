@@ -123,6 +123,14 @@
           <h1>WARGA DIGITAL</h1>
           <p>PORTAL DESA CERDAS</p>
         </div>
+        <!-- Close button on Mobile Drawer -->
+        <button
+          class="sidebar-close-btn"
+          @click="mobileNavOpen = false"
+          title="Tutup Menu"
+        >
+          <X size="20" />
+        </button>
       </div>
 
       <nav class="sidebar-nav">
@@ -166,6 +174,15 @@
     <div class="main-wrapper">
       <!-- Topbar Header (Matching Laptop Reference Photo) -->
       <header class="topbar">
+        <!-- Mobile Hamburger Menu Button -->
+        <button
+          class="mobile-nav-toggle-btn"
+          title="Buka Menu Navigasi"
+          @click="mobileNavOpen = !mobileNavOpen"
+        >
+          <Menu size="22" />
+        </button>
+
         <!-- Left: Administrasi Desa / Warga Digital -->
         <div class="topbar-brand">
           <span class="topbar-subheading">ADMINISTRASI DESA</span>

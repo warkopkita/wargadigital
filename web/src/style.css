@@ -877,3 +877,215 @@ body {
     display: none;
   }
 }
+
+
+/* =======================================================
+   RESPONSIVE MOBILE & TABLET SYSTEM (DESKTOP & HP SEAMLESS)
+   ======================================================= */
+
+.mobile-nav-toggle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1.5px solid #CBD5E1;
+  background: #FFFFFF;
+  color: #065F46;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-toggle-btn:hover {
+  background: #F1F5F9;
+  border-color: #047857;
+}
+
+.sidebar-close-btn {
+  display: none;
+  margin-left: auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Tablet & Mobile Screens (<= 900px) */
+@media (max-width: 900px) {
+  .mobile-nav-toggle-btn {
+    display: inline-flex;
+  }
+
+  .sidebar-close-btn {
+    display: inline-flex;
+  }
+
+  .sidebar {
+    width: 280px;
+    max-width: 85vw;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 12px 0 35px rgba(0, 0, 0, 0.35);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 90;
+  }
+
+  .main-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .topbar {
+    padding: 10px 14px;
+    height: auto;
+    min-height: 60px;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .topbar-brand {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .topbar-heading {
+    font-size: 0.95rem;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-subheading {
+    font-size: 0.62rem;
+  }
+
+  .topbar-search {
+    display: none; /* Disembunyikan di topbar HP agar tidak sesak */
+  }
+
+  .admin-meta {
+    display: none; /* Sembunyikan teks nama panjang di HP, tampilkan avatar pill */
+  }
+
+  .admin-profile-pill {
+    padding: 4px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .content-body {
+    padding: 14px 12px;
+  }
+
+  /* Grid Stack Vertically on Mobile */
+  .dashboard-metrics-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .dashboard-split-row {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .cctv-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .ref-stat-card {
+    padding: 16px;
+  }
+
+  .ref-card {
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  /* Tables horizontal scroll container */
+  .ref-table-wrap,
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modals on Mobile */
+  .modal-dialog,
+  .ref-modal,
+  .login-card {
+    width: 94vw !important;
+    max-width: 94vw !important;
+    margin: 12px auto !important;
+    padding: 18px !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+/* Small Smartphone Screens (<= 480px) */
+@media (max-width: 480px) {
+  .topbar {
+    padding: 8px 10px;
+  }
+
+  .topbar-heading {
+    font-size: 0.88rem;
+  }
+
+  .content-body {
+    padding: 10px 8px;
+  }
+
+  .ref-stat-value {
+    font-size: 1.4rem !important;
+  }
+
+  .btn-primary, .btn-secondary, .btn-outline {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+
+  /* Filter Buttons Wrap */
+  .cctv-filter-btn {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .notifications-dropdown-menu,
+  .profile-dropdown-menu {
+    width: 92vw;
+    right: -10px;
+  }
+}
