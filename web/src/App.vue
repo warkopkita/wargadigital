@@ -1554,7 +1554,9 @@
                     <tr v-for="b in filteredDuesBills" :key="b.id">
                       <td>
                         <div style="font-weight: 700; color: #0f172a;">{{ b.citizen_name }}</div>
-                        <div style="font-size: 0.72rem; color: #64748b;">NIK: {{ b.nik }} | RT {{ b.rt }}/RW {{ b.rw }}</div>
+                        <div style="font-size: 0.73rem; color: #64748b; margin-top: 2px;">
+                          NIK: {{ b.citizen_nik || b.nik || '-' }} • RT {{ b.citizen_rt || '001' }}/RW {{ b.citizen_rw || '005' }}
+                        </div>
                       </td>
                       <td>
                         <div style="font-weight: 600; color: #334155;">{{ b.month }} {{ b.year }}</div>
@@ -1573,22 +1575,18 @@
                         <span v-else style="color: #94a3b8; font-size: 0.76rem;">- Belum Pilih -</span>
                       </td>
                       <td>
-                        <div v-if="b.proof_image_url" style="display: flex; align-items: center; gap: 6px;">
-                          <img
-                            :src="b.proof_image_url"
-                            style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; cursor: pointer;"
-                            @click="openProofPreview(b.proof_image_url)"
-                            title="Klik untuk melihat bukti full"
-                          />
+                        <div v-if="b.proof_image_url">
                           <button
-                            class="btn-text"
-                            style="font-size: 0.72rem; color: #0284c7; text-decoration: underline; padding: 0;"
+                            class="btn-outline"
+                            style="font-size: 0.74rem; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px; color: #0284c7; border-color: #bae6fd; background: #f0f9ff; border-radius: 8px; font-weight: 700;"
                             @click="openProofPreview(b.proof_image_url)"
+                            title="Buka lampiran bukti transfer"
                           >
-                            Lihat Foto
+                            <Eye size="13" />
+                            <span>Lihat Bukti</span>
                           </button>
                         </div>
-                        <span v-else style="color: #94a3b8; font-size: 0.76rem;">Belum Unggah</span>
+                        <span v-else style="color: #94a3b8; font-size: 0.75rem; font-style: italic;">Belum Unggah</span>
                       </td>
                       <td>
                         <span v-if="b.status === 'lunas'" class="badge badge-success" style="display: inline-flex; align-items: center; gap: 4px;">
@@ -1607,7 +1605,7 @@
                             {{ b.receipt_number }}
                           </span>
                           <a
-                            :href="`${SERVER_BASE}/receipts/${b.receipt_number}/print`"
+                            :href="`${API_BASE}/receipts/${b.receipt_number}/print?autoprint=1`"
                             target="_blank"
                             style="font-size: 0.72rem; color: #16a34a; text-decoration: none; display: inline-flex; align-items: center; gap: 3px;"
                           >
@@ -1630,7 +1628,7 @@
 
                           <a
                             v-if="b.status === 'lunas' && b.receipt_number"
-                            :href="`${SERVER_BASE}/receipts/${b.receipt_number}/print`"
+                            :href="`${API_BASE}/receipts/${b.receipt_number}/print?autoprint=1`"
                             target="_blank"
                             class="btn-outline"
                             style="text-decoration: none; font-size: 0.75rem; padding: 5px 10px;"
@@ -2191,6 +2189,53 @@
         </div>
       </main>
     </div>
+
+    <!-- Dedicated Mobile Bottom Navigation Bar (Khusus Tampilan HP) -->
+    <nav class="mobile-bottom-nav">
+      <button
+        class="mobile-bottom-item"
+        :class="{ active: currentTab === 'dashboard' }"
+        @click="selectTab('dashboard')"
+      >
+        <LayoutDashboard size="20" />
+        <span>Beranda</span>
+      </button>
+
+      <button
+        class="mobile-bottom-item"
+        :class="{ active: currentTab === 'citizens' }"
+        @click="selectTab('citizens')"
+      >
+        <Users size="20" />
+        <span>Warga</span>
+      </button>
+
+      <button
+        class="mobile-bottom-item"
+        :class="{ active: currentTab === 'letters' }"
+        @click="selectTab('letters')"
+      >
+        <FileText size="20" />
+        <span>Surat</span>
+      </button>
+
+      <button
+        class="mobile-bottom-item"
+        :class="{ active: currentTab === 'treasury' }"
+        @click="selectTab('treasury')"
+      >
+        <Wallet size="20" />
+        <span>Kas RT</span>
+      </button>
+
+      <button
+        class="mobile-bottom-item"
+        @click="mobileNavOpen = true"
+      >
+        <Menu size="20" />
+        <span>Menu</span>
+      </button>
+    </nav>
 
     <!-- MODAL: KUSTOMISASI IDENTITAS DESA -->
     <div v-if="showSettingsModal" class="modal-overlay">

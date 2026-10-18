@@ -1679,7 +1679,9 @@ Route::get('/dues/all', function () {
             'lunas' => $bills->where('status', 'lunas')->count(),
             'menunggu_verifikasi' => $bills->where('status', 'menunggu_verifikasi')->count(),
             'menunggu_bayar' => $bills->where('status', 'menunggu_bayar')->count(),
-            'total_terkumpul' => $bills->where('status', 'lunas')->sum('amount'),
+            'total_terkumpul' => (float)$bills->where('status', 'lunas')->sum('amount'),
+            'total_nominal_terkumpul' => (float)$bills->where('status', 'lunas')->sum('amount'),
+            'total_nominal_menunggu' => (float)$bills->where('status', 'menunggu_bayar')->sum('amount'),
         ],
     ]);
 });
