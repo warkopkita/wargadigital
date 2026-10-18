@@ -1794,6 +1794,336 @@
           </div>
         </div>
 
+
+        <!-- 9. TAB: CCTV MONITORING (KHUSUS ADMIN, STAFF & LINMAS) -->
+        <div v-if="currentTab === 'cctv'">
+          <!-- Header Command Banner -->
+          <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #090d16 0%, #1e1b4b 50%, #064e3b 100%); color: white; border: none; box-shadow: 0 10px 25px -5px rgba(2, 6, 23, 0.5);">
+            <div class="card-body" style="padding: 24px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(22, 163, 74, 0.25); border: 1px solid #16a34a; color: #4ade80; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">
+                      <span style="width: 8px; height: 8px; border-radius: 50%; background: #4ade80; display: inline-block; animation: pulse 1.5s infinite;"></span>
+                      PUSAT KENDALI CCTV
+                    </span>
+                    <span style="background: rgba(234, 88, 12, 0.25); border: 1px solid #ea580c; color: #fb923c; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">
+                      🔒 Khusus Admin & Staff
+                    </span>
+                  </div>
+                  <h2 style="font-size: 1.5rem; font-weight: 900; margin: 0 0 6px 0; color: #ffffff;">
+                    Pemantauan CCTV Lingkungan RT 001 / RW 005
+                  </h2>
+                  <p style="margin: 0; color: #cbd5e1; font-size: 0.88rem; max-width: 650px; line-height: 1.5;">
+                    Sistem pengawasan keamanan live stream 24 jam di titik rawan lingkungan. Dilengkapi perekam insiden, snapshot bukti digital, dan mode TV Pos Ronda.
+                  </p>
+                </div>
+
+                <!-- Right Action Buttons -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button
+                    class="btn-primary"
+                    style="background: #16a34a; border: none; font-size: 0.82rem; padding: 10px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;"
+                    @click="toggleFullscreenCctv"
+                  >
+                    📺 Mode TV Pos Ronda (Fullscreen)
+                  </button>
+                  <button
+                    class="btn-outline"
+                    style="color: white; border-color: rgba(255,255,255,0.3); font-size: 0.82rem; padding: 10px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;"
+                    @click="fetchCctvData"
+                  >
+                    <RefreshCw size="14" /> Segarkan Feed
+                  </button>
+                </div>
+              </div>
+
+              <!-- Real-time Stats Chips -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 20px;">
+                <div style="background: rgba(255, 255, 255, 0.08); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                  <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Total Kamera IP</div>
+                  <div style="font-size: 1.35rem; font-weight: 900; color: #ffffff; margin-top: 2px;">{{ cctvSummary.total_cameras || 4 }} Titik</div>
+                </div>
+                <div style="background: rgba(22, 163, 74, 0.15); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(74, 222, 128, 0.3);">
+                  <div style="font-size: 0.72rem; color: #86efac; font-weight: 700; text-transform: uppercase;">Kamera Online (Aktif)</div>
+                  <div style="font-size: 1.35rem; font-weight: 900; color: #4ade80; margin-top: 2px;">{{ cctvSummary.online_cameras || 4 }} Kamera (30 FPS)</div>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.15); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(248, 113, 113, 0.3);">
+                  <div style="font-size: 0.72rem; color: #fca5a5; font-weight: 700; text-transform: uppercase;">Kamera Offline (Mati)</div>
+                  <div style="font-size: 1.35rem; font-weight: 900; color: #ef4444; margin-top: 2px;">{{ cctvSummary.offline_cameras || 0 }} Kamera</div>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.08); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                  <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Kondisi Jaringan RTSP</div>
+                  <div style="font-size: 1rem; font-weight: 800; color: #38bdf8; margin-top: 5px;">{{ cctvSummary.system_status || 'Optimal' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Lokasi Kamera -->
+          <div style="display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 0.8rem; font-weight: 800; color: #64748b; margin-right: 4px;">Pilih Lokasi:</span>
+            <button
+              class="btn-outline"
+              :style="{ background: cctvFilter === 'all' ? '#0f172a' : '#ffffff', color: cctvFilter === 'all' ? '#ffffff' : '#334155', borderColor: '#cbd5e1', fontSize: '0.78rem', padding: '6px 12px' }"
+              @click="cctvFilter = 'all'"
+            >
+              Semua Titik ({{ cctvCameras.length }})
+            </button>
+            <button
+              class="btn-outline"
+              :style="{ background: cctvFilter === 'Gerbang' ? '#0f172a' : '#ffffff', color: cctvFilter === 'Gerbang' ? '#ffffff' : '#334155', borderColor: '#cbd5e1', fontSize: '0.78rem', padding: '6px 12px' }"
+              @click="cctvFilter = 'Gerbang'"
+            >
+              🚪 Portal Gerbang Utama
+            </button>
+            <button
+              class="btn-outline"
+              :style="{ background: cctvFilter === 'Pos' ? '#0f172a' : '#ffffff', color: cctvFilter === 'Pos' ? '#ffffff' : '#334155', borderColor: '#cbd5e1', fontSize: '0.78rem', padding: '6px 12px' }"
+              @click="cctvFilter = 'Pos'"
+            >
+              👮 Pos Ronda & Balai
+            </button>
+            <button
+              class="btn-outline"
+              :style="{ background: cctvFilter === 'Taman' ? '#0f172a' : '#ffffff', color: cctvFilter === 'Taman' ? '#ffffff' : '#334155', borderColor: '#cbd5e1', fontSize: '0.78rem', padding: '6px 12px' }"
+              @click="cctvFilter = 'Taman'"
+            >
+              🌳 Simpang Blok B & Taman
+            </button>
+            <button
+              class="btn-outline"
+              :style="{ background: cctvFilter === 'TPS' ? '#0f172a' : '#ffffff', color: cctvFilter === 'TPS' ? '#ffffff' : '#334155', borderColor: '#cbd5e1', fontSize: '0.78rem', padding: '6px 12px' }"
+              @click="cctvFilter = 'TPS'"
+            >
+              ♻️ Jalur Barat & TPS
+            </button>
+          </div>
+
+          <!-- 2x2 MULTI-CAMERA STREAM GRID -->
+          <div
+            id="cctv-grid-container"
+            style="background: #020617; padding: 18px; border-radius: 16px; border: 1px solid #1e293b; margin-bottom: 24px;"
+          >
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 16px;">
+              <div
+                v-for="cam in filteredCctvCameras"
+                :key="cam.id"
+                style="background: #0b1120; border-radius: 12px; overflow: hidden; border: 1px solid #1e293b; display: flex; flex-direction: column; position: relative;"
+              >
+                <!-- Camera Header Overlay -->
+                <div style="background: rgba(15, 23, 42, 0.9); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span
+                      :style="{
+                        width: '9px',
+                        height: '9px',
+                        borderRadius: '50%',
+                        background: cam.status === 'online' ? '#22c55e' : '#ef4444',
+                        display: 'inline-block',
+                        boxShadow: cam.status === 'online' ? '0 0 8px #22c55e' : 'none'
+                      }"
+                    ></span>
+                    <span style="font-weight: 800; color: #f8fafc; font-size: 0.85rem;">{{ cam.name }}</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="background: rgba(255,255,255,0.1); color: #cbd5e1; font-size: 0.7rem; padding: 2px 8px; border-radius: 6px; font-weight: 600;">
+                      {{ cam.resolution }}
+                    </span>
+                    <span style="color: #4ade80; font-size: 0.7rem; font-weight: 700; font-family: monospace;">
+                      {{ cam.status === 'online' ? `${cam.fps} FPS` : 'OFFLINE' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Video Player Feed -->
+                <div style="position: relative; width: 100%; height: 260px; background: #000; overflow: hidden;">
+                  <video
+                    v-if="cam.status === 'online'"
+                    :src="cam.stream_url"
+                    :poster="cam.preview_image"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    style="width: 100%; height: 100%; object-fit: cover;"
+                  ></video>
+
+                  <!-- Offline Overlay -->
+                  <div
+                    v-else
+                    style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; color: #ef4444;"
+                  >
+                    <AlertTriangle size="36" />
+                    <span style="font-weight: 800; font-size: 0.9rem; margin-top: 8px; color: #f87171;">SINYAL CCTV TERPUTUS</span>
+                    <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">Periksa kabel LAN atau daya listrik di {{ cam.location }}</span>
+                  </div>
+
+                  <!-- Live Timestamp Watermark -->
+                  <div style="position: absolute; top: 10px; right: 12px; background: rgba(0,0,0,0.65); padding: 3px 8px; border-radius: 4px; color: #ffffff; font-family: monospace; font-size: 0.72rem; letter-spacing: 0.5px;">
+                    ● REC • {{ liveCctvClock }} WIB
+                  </div>
+
+                  <!-- Camera IP & Location Watermark -->
+                  <div style="position: absolute; bottom: 10px; left: 12px; background: rgba(0,0,0,0.65); padding: 3px 8px; border-radius: 4px; color: #cbd5e1; font-size: 0.7rem;">
+                    {{ cam.location }} • IP: {{ cam.ip_address }}:{{ cam.port }}
+                  </div>
+                </div>
+
+                <!-- Bottom Controls & Action Bar -->
+                <div style="padding: 10px 14px; background: #090d16; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06);">
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <button
+                      class="btn-primary"
+                      style="font-size: 0.75rem; padding: 5px 10px; background: #0284c7; border: none; font-weight: 700; display: flex; align-items: center; gap: 5px;"
+                      @click="openSnapshotModal(cam)"
+                      title="Ambil tangkapan layar dan simpan sebagai bukti insiden keamanan"
+                    >
+                      <Camera size="13" /> Ambil Snapshot
+                    </button>
+                    <button
+                      class="btn-outline"
+                      style="font-size: 0.72rem; padding: 4px 8px; border-color: rgba(255,255,255,0.2); color: #94a3b8;"
+                      @click="toggleCctvStatus(cam)"
+                      :title="cam.status === 'online' ? 'Uji coba matikan kamera (simulasi)' : 'Nyalakan kembali kamera'"
+                    >
+                      {{ cam.status === 'online' ? 'Matikan' : 'Aktifkan' }}
+                    </button>
+                  </div>
+
+                  <!-- PTZ Badge if available -->
+                  <div v-if="cam.has_ptz" style="display: flex; align-items: center; gap: 4px; color: #fbbf24; font-size: 0.72rem; font-weight: 700;">
+                    <span>🎮 PTZ 360° Aktif</span>
+                  </div>
+                  <div v-else style="color: #64748b; font-size: 0.72rem;">
+                    Fix Angle • {{ cam.model }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Inventaris Kamera & Riwayat Bukti Insiden -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Tabel Perangkat Hardware CCTV -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">📡 Data Teknis Kamera & Jaringan RTSP</h3>
+                <span class="badge badge-success">4 Kamera Terdaftar</span>
+              </div>
+              <div class="card-body" style="padding: 0;">
+                <table class="table" style="font-size: 0.8rem;">
+                  <thead>
+                    <tr>
+                      <th>Kamera & Merk</th>
+                      <th>IP Lokal & Port</th>
+                      <th>Resolusi / FPS</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="cam in cctvCameras" :key="cam.id">
+                      <td>
+                        <strong>{{ cam.name }}</strong>
+                        <div style="font-size: 0.72rem; color: #64748b;">{{ cam.model }}</div>
+                      </td>
+                      <td style="font-family: monospace;">{{ cam.ip_address }}:{{ cam.port }}</td>
+                      <td>{{ cam.resolution }} • {{ cam.fps }}fps</td>
+                      <td>
+                        <span :class="cam.status === 'online' ? 'badge badge-success' : 'badge badge-danger'">
+                          {{ cam.status.toUpperCase() }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Log Insiden & Tangkapan Layar CCTV -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">📸 Log Tangkapan Layar & Insiden Keamanan</h3>
+                <span class="badge badge-warning">{{ cctvIncidents.length }} Insiden Tercatat</span>
+              </div>
+              <div class="card-body" style="padding: 16px; max-height: 380px; overflow-y: auto;">
+                <div v-if="cctvIncidents.length === 0" style="text-align: center; color: #94a3b8; padding: 20px 0; font-size: 0.85rem;">
+                  Belum ada laporan insiden CCTV.
+                </div>
+                <div
+                  v-for="inc in cctvIncidents"
+                  :key="inc.id"
+                  style="display: flex; gap: 12px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; align-items: flex-start;"
+                >
+                  <img
+                    :src="inc.snapshot_url"
+                    alt="Bukti CCTV"
+                    style="width: 70px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;"
+                  />
+                  <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <h4 style="font-size: 0.82rem; font-weight: 800; margin: 0; color: #0f172a;">{{ inc.title }}</h4>
+                      <span class="badge badge-warning" style="font-size: 0.65rem;">{{ inc.severity.toUpperCase() }}</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #475569; margin: 3px 0;">{{ inc.description }}</div>
+                    <div style="font-size: 0.7rem; color: #94a3b8;">
+                      {{ inc.camera_name }} • Pelapor: {{ inc.reporter_name }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: AMBIL SNAPSHOT & CATAT BUKTI CCTV -->
+        <div v-if="showSnapshotModal" class="modal-overlay">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title">📸 Simpan Bukti Tangkapan Layar CCTV</h3>
+              <button class="btn-close" @click="showSnapshotModal = false">×</button>
+            </div>
+            <div class="modal-body">
+              <div style="margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1;">
+                <img
+                  :src="selectedCctvForSnapshot?.preview_image"
+                  alt="Snapshot Preview"
+                  style="width: 100%; height: 180px; object-fit: cover;"
+                />
+                <div style="padding: 8px 12px; background: #f8fafc; font-size: 0.75rem; color: #475569;">
+                  <strong>{{ selectedCctvForSnapshot?.name }}</strong> ({{ selectedCctvForSnapshot?.location }})
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Judul Insiden / Aktivitas</label>
+                <input v-model="snapshotForm.title" type="text" class="form-control" placeholder="Contoh: Tamu Masuk Malam Hari Tanpa Izin" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Tingkat Perhatian (Severity)</label>
+                <select v-model="snapshotForm.severity" class="form-control">
+                  <option value="rendah">Rendah (Pencatatan Rutin)</option>
+                  <option value="sedang">Sedang (Perlu Perhatian)</option>
+                  <option value="tinggi">Tinggi (Mencurigakan)</option>
+                  <option value="darurat">Darurat (Tindakan Cepat)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Keterangan / Kronologi Singkat</label>
+                <textarea v-model="snapshotForm.description" class="form-control" rows="3" placeholder="Tuliskan plat nomor, ciri-ciri, atau arahan petugas..."></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-outline" @click="showSnapshotModal = false">Batal</button>
+              <button class="btn-primary" style="background: #0284c7; border: none;" @click="saveCctvSnapshot">
+                Simpan ke Buku Insiden
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- 8. TAB: NEWS & ANNOUNCEMENTS -->
         <div v-if="currentTab === 'news'">
           <div class="card">
@@ -2754,16 +3084,28 @@ const newNews = ref({
 });
 
 // Navigation items definition (Matching Laptop Reference Photo)
-const navItems = computed(() => [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'citizens', label: 'Data Warga', icon: Users, badge: stats.value.pending_citizens || null },
-  { id: 'letters', label: 'Layanan Surat', icon: FileText, badge: stats.value.pending_letters || null },
-  { id: 'treasury', label: 'Kas Darurat', icon: Wallet },
-  { id: 'patrols', label: 'Jadwal Ronda', icon: Shield },
-  { id: 'posyandu', label: 'Posyandu', icon: HeartPulse },
-  { id: 'complaints', label: 'Aduan Warga', icon: AlertCircle, badge: stats.value.active_complaints || null },
-  { id: 'news', label: 'Kabar Kampung', icon: Megaphone },
-]);
+const navItems = computed(() => {
+  const items = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'citizens', label: 'Data Warga', icon: Users, badge: stats.value.pending_citizens || null },
+    { id: 'letters', label: 'Layanan Surat', icon: FileText, badge: stats.value.pending_letters || null },
+    { id: 'treasury', label: 'Kas Darurat', icon: Wallet },
+    { id: 'patrols', label: 'Jadwal Ronda', icon: Shield },
+  ];
+
+  // KHUSUS ADMIN & STAFF PENGURUS (RT, RW, Bendahara, Sekretaris, Staff, Linmas)
+  if (['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'].includes(currentUser.value?.role)) {
+    items.push({ id: 'cctv', label: 'CCTV Pos & Jalan', icon: Camera, badge: '4 LIVE' });
+  }
+
+  items.push(
+    { id: 'posyandu', label: 'Posyandu', icon: HeartPulse },
+    { id: 'complaints', label: 'Aduan Warga', icon: AlertCircle, badge: stats.value.active_complaints || null },
+    { id: 'news', label: 'Kabar Kampung', icon: Megaphone }
+  );
+
+  return items;
+});
 
 const currentTitle = computed(() => {
   const map = {
@@ -2774,6 +3116,7 @@ const currentTitle = computed(() => {
     patrols: 'Jadwal Ronda & Peta GPS',
     posyandu: 'Kegiatan Posyandu Balita & Lansia',
     complaints: 'Aduan Masalah Lingkungan & TPS',
+    cctv: 'Pusat Pemantauan CCTV RT (Khusus Pengurus & Linmas)',
     news: 'Kabar & Pengumuman Kampung',
   };
   return map[currentTab.value] || 'Warga Digital';
@@ -2881,6 +3224,100 @@ function initMap(tabId) {
   }
 }
 
+
+// ===========================================================================
+// CCTV MONITORING SYSTEM STATE & LOGIC (KHUSUS ADMIN, STAFF & LINMAS)
+// ===========================================================================
+const cctvCameras = ref([]);
+const cctvSummary = ref({ total_cameras: 4, online_cameras: 4, offline_cameras: 0, system_status: 'Optimal (Semua Online)' });
+const cctvIncidents = ref([]);
+const cctvFilter = ref('all');
+const showSnapshotModal = ref(false);
+const selectedCctvForSnapshot = ref(null);
+const snapshotForm = ref({ title: '', description: '', severity: 'sedang' });
+const isCctvFullscreen = ref(false);
+const liveCctvClock = ref(new Date().toLocaleTimeString('id-ID'));
+
+setInterval(() => {
+  liveCctvClock.value = new Date().toLocaleTimeString('id-ID');
+}, 1000);
+
+const filteredCctvCameras = computed(() => {
+  if (cctvFilter.value === 'all') return cctvCameras.value;
+  return cctvCameras.value.filter(c => c.name.toLowerCase().includes(cctvFilter.value.toLowerCase()) || c.location.toLowerCase().includes(cctvFilter.value.toLowerCase()));
+});
+
+async function fetchCctvData() {
+  try {
+    const role = currentUser.value?.role || 'rt';
+    const [cctvRes, incidentsRes] = await Promise.all([
+      axios.get(`${API_BASE}/cctv?role=${role}`),
+      axios.get(`${API_BASE}/cctv/incidents`),
+    ]);
+    if (cctvRes.data.success) {
+      cctvCameras.value = cctvRes.data.data || [];
+      cctvSummary.value = cctvRes.data.summary || {};
+    }
+    if (incidentsRes.data.success) {
+      cctvIncidents.value = incidentsRes.data.data || [];
+    }
+  } catch (err) {
+    console.error('Error loading CCTV:', err);
+  }
+}
+
+async function toggleCctvStatus(cam) {
+  try {
+    const res = await axios.post(`${API_BASE}/cctv/${cam.id}/toggle-status`);
+    cam.status = res.data.new_status;
+    await fetchCctvData();
+  } catch (err) {
+    alert('Gagal mengubah status CCTV');
+  }
+}
+
+function openSnapshotModal(cam) {
+  selectedCctvForSnapshot.value = cam;
+  snapshotForm.value = {
+    title: `Aktivitas Terpantau di ${cam.name}`,
+    description: `Tangkapan layar pemantauan rutin pukul ${liveCctvClock.value} WIB.`,
+    severity: 'sedang',
+  };
+  showSnapshotModal.value = true;
+}
+
+async function saveCctvSnapshot() {
+  if (!selectedCctvForSnapshot.value || !snapshotForm.value.title) {
+    alert('Harap masukkan judul insiden / catatan!');
+    return;
+  }
+  try {
+    const res = await axios.post(`${API_BASE}/cctv/snapshot`, {
+      camera_id: selectedCctvForSnapshot.value.id,
+      title: snapshotForm.value.title,
+      description: snapshotForm.value.description,
+      severity: snapshotForm.value.severity,
+      reported_by: currentUser.value?.id || 1,
+      snapshot_url: selectedCctvForSnapshot.value.preview_image,
+    });
+    alert('✅ ' + res.data.message);
+    showSnapshotModal.value = false;
+    await fetchCctvData();
+  } catch (err) {
+    alert('Gagal menyimpan bukti snapshot CCTV: ' + (err.response?.data?.message || err.message));
+  }
+}
+
+function toggleFullscreenCctv() {
+  const elem = document.getElementById('cctv-grid-container');
+  if (!elem) return;
+  if (!document.fullscreenElement) {
+    elem.requestFullscreen().then(() => { isCctvFullscreen.value = true; }).catch(() => {});
+  } else {
+    document.exitFullscreen().then(() => { isCctvFullscreen.value = false; }).catch(() => {});
+  }
+}
+
 // Fetch all backend data
 async function refreshData() {
   loading.value = true;
@@ -2913,6 +3350,7 @@ async function refreshData() {
     treasuryData.value = treasuryRes.data;
     newsList.value = newsRes.data.data;
     duesData.value = duesRes.data;
+    await fetchCctvData();
 
     if (emergencyRes.data.data && emergencyRes.data.data.length > 0) {
       const active = emergencyRes.data.data.find((e) => e.status === 'aktif');

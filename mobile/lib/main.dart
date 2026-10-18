@@ -1509,19 +1509,42 @@ class HomeDashboardPage extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.4),
             ),
             const SizedBox(height: 14),
-            SizedBox(
-              height: 44,
-              child: ElevatedButton.icon(
-                onPressed: () => _openAbsenLinmasDialog(context),
-                icon: const Icon(Icons.location_on, size: 18),
-                label: const Text('Absen Masuk Pos Ronda (GPS)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openAbsenLinmasDialog(context),
+                      icon: const Icon(Icons.location_on, size: 16),
+                      label: const Text('Absen GPS', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openCctvDialog(context, {'role': role}),
+                      icon: const Icon(Icons.videocam_rounded, size: 16),
+                      label: const Text('CCTV RT', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F172A),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1896,6 +1919,15 @@ class HomeDashboardPage extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const AduanWargaModalSheet(),
+    );
+  }
+
+  static void _openCctvDialog(BuildContext context, [Map<String, dynamic>? user]) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CctvModalSheet(user: user),
     );
   }
 
@@ -6794,3 +6826,227 @@ class _SearchLayananModalSheetState extends State<SearchLayananModalSheet> {
 }
 
 
+
+
+// ---------------------------------------------------------------------------
+// CCTV MONITORING MODAL SHEET (KHUSUS PENGURUS & LINMAS)
+// ---------------------------------------------------------------------------
+class CctvModalSheet extends StatefulWidget {
+  final Map<String, dynamic>? user;
+  const CctvModalSheet({super.key, this.user});
+
+  @override
+  State<CctvModalSheet> createState() => _CctvModalSheetState();
+}
+
+class _CctvModalSheetState extends State<CctvModalSheet> {
+  bool _isLoading = true;
+  List<dynamic> _cameras = [];
+  Map<String, dynamic> _summary = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCctv();
+  }
+
+  Future<void> _fetchCctv() async {
+    setState(() => _isLoading = true);
+    try {
+      final role = widget.user?['role'] ?? 'rt';
+      final res = await http.get(Uri.parse('${getApiBase()}/cctv?role=$role'));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        if (decoded['success'] == true) {
+          setState(() {
+            _cameras = decoded['data'] ?? [];
+            _summary = decoded['summary'] ?? {};
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+      setState(() => _isLoading = false);
+    } catch (_) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _recordIncident(Map<String, dynamic> cam) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.camera_alt, color: Color(0xFF0284C7)),
+            SizedBox(width: 8),
+            Text('Snapshot CCTV Disimpan', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Tangkapan layar dari ${cam['name']} telah disimpan secara otomatis ke Log Insiden Keamanan RT.', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(cam['preview_image'] ?? '', height: 120, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.videocam, size: 40)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tutup')),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Container(width: 44, height: 4, decoration: BoxDecoration(color: const Color(0xFF334155), borderRadius: BorderRadius.circular(4))),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.videocam_rounded, color: Color(0xFF22C55E), size: 24),
+                    SizedBox(width: 8),
+                    Text('CCTV Keamanan RT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close, color: Color(0xFF94A3B8)), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(10)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('🔒 Akses Khusus: Pengurus RT & Linmas', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
+                Text('${_summary['online_cameras'] ?? 4} Online', style: const TextStyle(color: Color(0xFF22C55E), fontSize: 11, fontWeight: FontWeight.w800)),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFF1E293B)),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF22C55E)))
+                : _cameras.isEmpty
+                    ? const Center(child: Text('Kamera tidak ditemukan.', style: TextStyle(color: Colors.white70)))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _cameras.length,
+                        itemBuilder: (ctx, i) {
+                          final cam = _cameras[i];
+                          final isOnline = cam['status'] == 'online';
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFF334155)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: BoxDecoration(
+                                              color: isOnline ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(cam['name'] ?? 'CCTV', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                                        ],
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(6)),
+                                        child: Text(cam['resolution'] ?? '1080p', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Stack(
+                                  children: [
+                                    ClipRRect(
+                                      child: Image.network(
+                                        cam['preview_image'] ?? '',
+                                        height: 180,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(height: 180, color: Colors.black, child: const Center(child: Icon(Icons.videocam_off, color: Colors.white24, size: 40))),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+                                        child: const Text('● LIVE', style: TextStyle(color: Color(0xFF22C55E), fontSize: 10, fontWeight: FontWeight.w900)),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      bottom: 8,
+                                      left: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+                                        child: Text(cam['location'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(cam['model'] ?? 'IP Camera', style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                                      ElevatedButton.icon(
+                                        onPressed: () => _recordIncident(cam),
+                                        icon: const Icon(Icons.camera_alt, size: 14),
+                                        label: const Text('Snapshot Bukti', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1824,4 +1824,241 @@ Route::get('/dues/export', function () {
     ]);
 });
 
+// ===========================================================================
+// CCTV MONITORING SYSTEM (KHUSUS ADMIN, STAFF & LINMAS)
+// ===========================================================================
+
+// Auto-create cctv_cameras & cctv_incidents table if not exists
+if (!Schema::hasTable('cctv_cameras')) {
+    Schema::create('cctv_cameras', function ($table) {
+        $table->id();
+        $table->string('name');
+        $table->string('location');
+        $table->string('model')->default('TP-Link Tapo C320WS');
+        $table->string('ip_address')->default('192.168.1.101');
+        $table->integer('port')->default(554);
+        $table->string('stream_url')->nullable();
+        $table->string('preview_image')->nullable();
+        $table->string('status')->default('online'); // online, offline, maintenance
+        $table->string('resolution')->default('1080p FHD');
+        $table->integer('fps')->default(30);
+        $table->boolean('has_ptz')->default(false);
+        $table->boolean('is_restricted')->default(true); // Khusus Admin & Staff
+        $table->timestamps();
+    });
+
+    // Seed 4 Kamera Lingkungan RT
+    DB::table('cctv_cameras')->insert([
+        [
+            'name' => 'CCTV 01 - Portal Gerbang Utama',
+            'location' => 'Portal Masuk RT 001 / RW 005',
+            'model' => 'TP-Link Tapo C320WS Outdoor',
+            'ip_address' => '192.168.1.101',
+            'port' => 554,
+            'stream_url' => 'https://assets.mixkit.co/videos/preview/mixkit-traffic-in-a-street-intersection-4061-large.mp4',
+            'preview_image' => 'https://images.unsplash.com/photo-1549880338-65ddcdfd017b?auto=format&fit=crop&w=600&q=80',
+            'status' => 'online',
+            'resolution' => '1080p Full HD',
+            'fps' => 30,
+            'has_ptz' => false,
+            'is_restricted' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'name' => 'CCTV 02 - Pos Ronda & Parkiran Bersama',
+            'location' => 'Pos Keamanan & Balai Warga RT',
+            'model' => 'Ezviz H3c Color Night Outdoor',
+            'ip_address' => '192.168.1.102',
+            'port' => 554,
+            'stream_url' => 'https://assets.mixkit.co/videos/preview/mixkit-empty-city-street-at-night-4220-large.mp4',
+            'preview_image' => 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=600&q=80',
+            'status' => 'online',
+            'resolution' => '1080p Full HD',
+            'fps' => 25,
+            'has_ptz' => false,
+            'is_restricted' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'name' => 'CCTV 03 - Simpang Blok B & Taman Anak',
+            'location' => 'Persimpangan Jalan Melati / Lapangan',
+            'model' => 'TP-Link Tapo C500 Smart PTZ 360°',
+            'ip_address' => '192.168.1.103',
+            'port' => 554,
+            'stream_url' => 'https://assets.mixkit.co/videos/preview/mixkit-daytime-traffic-on-a-busy-city-avenue-4065-large.mp4',
+            'preview_image' => 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=600&q=80',
+            'status' => 'online',
+            'resolution' => '1080p Full HD',
+            'fps' => 30,
+            'has_ptz' => true,
+            'is_restricted' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'name' => 'CCTV 04 - Jalur Barat & Bank Sampah RT',
+            'location' => 'Gerbang Samping & Area TPS Mandiri',
+            'model' => 'Hikvision IP Bullet DS-2CD',
+            'ip_address' => '192.168.1.104',
+            'port' => 554,
+            'stream_url' => 'https://assets.mixkit.co/videos/preview/mixkit-crosswalk-of-a-busy-avenue-in-a-city-4062-large.mp4',
+            'preview_image' => 'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=600&q=80',
+            'status' => 'online',
+            'resolution' => '1080p Full HD',
+            'fps' => 25,
+            'has_ptz' => false,
+            'is_restricted' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+}
+
+if (!Schema::hasTable('cctv_incidents')) {
+    Schema::create('cctv_incidents', function ($table) {
+        $table->id();
+        $table->unsignedBigInteger('camera_id');
+        $table->string('camera_name');
+        $table->string('title');
+        $table->text('description')->nullable();
+        $table->string('snapshot_url')->nullable();
+        $table->string('severity')->default('sedang'); // rendah, sedang, tinggi, darurat
+        $table->unsignedBigInteger('reported_by')->nullable();
+        $table->string('reporter_name')->default('Petugas Linmas');
+        $table->timestamps();
+    });
+
+    DB::table('cctv_incidents')->insert([
+        [
+            'camera_id' => 1,
+            'camera_name' => 'CCTV 01 - Portal Gerbang Utama',
+            'title' => 'Kendaraan Truk Muatan Melintas Malam Hari',
+            'description' => 'Truk boks ekspedisi masuk pukul 23:45, telah didata oleh petugas jaga pos.',
+            'snapshot_url' => 'https://images.unsplash.com/photo-1549880338-65ddcdfd017b?auto=format&fit=crop&w=600&q=80',
+            'severity' => 'rendah',
+            'reported_by' => 1,
+            'reporter_name' => 'Pak Sutrisno (Linmas)',
+            'created_at' => now()->subHours(5),
+            'updated_at' => now()->subHours(5),
+        ],
+        [
+            'camera_id' => 3,
+            'camera_name' => 'CCTV 03 - Simpang Blok B & Taman Anak',
+            'title' => 'Lampu Taman Padam Sementara',
+            'description' => 'Kondisi lampu jalan nomor 3 di dekat taman terindikasi padam, perlu penggantian bohlam LED.',
+            'snapshot_url' => 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=600&q=80',
+            'severity' => 'sedang',
+            'reported_by' => 1,
+            'reporter_name' => 'Bambang Sudarmono (Ketua RT)',
+            'created_at' => now()->subDays(1),
+            'updated_at' => now()->subDays(1),
+        ],
+    ]);
+}
+
+// 1. GET /api/cctv - List Kamera (Khusus Admin, Pengurus, Linmas)
+Route::get('/cctv', function (Request $request) {
+    $role = strtolower($request->query('role', ''));
+    $userId = $request->query('user_id');
+
+    if ($userId) {
+        $user = DB::table('users')->where('id', $userId)->first();
+        if ($user) $role = strtolower($user->role);
+    }
+
+    $allowedRoles = ['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin', 'linmas'];
+    
+    // Jika ada request dari role warga biasa, tolak akses demi privasi lingkungan
+    if ($role && !in_array($role, $allowedRoles)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Akses Terbatas: Pemantauan CCTV lingkungan hanya diperuntukkan bagi Ketua RT, Pengurus, dan Petugas Keamanan (Linmas).',
+        ], 403);
+    }
+
+    $cameras = DB::table('cctv_cameras')->orderBy('id', 'asc')->get();
+    $total = $cameras->count();
+    $online = $cameras->where('status', 'online')->count();
+    $offline = $cameras->where('status', 'offline')->count();
+
+    return response()->json([
+        'success' => true,
+        'summary' => [
+            'total_cameras' => $total,
+            'online_cameras' => $online,
+            'offline_cameras' => $offline,
+            'system_status' => $offline === 0 ? 'Optimal (Semua Online)' : "Peringatan ($offline Offline)",
+            'last_sync' => now()->toIso8601String(),
+        ],
+        'data' => $cameras,
+    ]);
+});
+
+// 2. POST /api/cctv/snapshot - Simpan Bukti Insiden / Tangkapan Layar
+Route::post('/cctv/snapshot', function (Request $request) {
+    $validated = $request->validate([
+        'camera_id' => 'required|exists:cctv_cameras,id',
+        'title' => 'required|string',
+        'description' => 'nullable|string',
+        'severity' => 'nullable|in:rendah,sedang,tinggi,darurat',
+        'reported_by' => 'nullable|exists:users,id',
+        'snapshot_url' => 'nullable|string',
+    ]);
+
+    $camera = DB::table('cctv_cameras')->where('id', $validated['camera_id'])->first();
+    $user = null;
+    if (!empty($validated['reported_by'])) {
+        $user = DB::table('users')->where('id', $validated['reported_by'])->first();
+    }
+
+    $incidentId = DB::table('cctv_incidents')->insertGetId([
+        'camera_id' => $camera->id,
+        'camera_name' => $camera->name,
+        'title' => $validated['title'],
+        'description' => $validated['description'] ?? 'Tangkapan layar pemantauan CCTV Pos Ronda',
+        'snapshot_url' => $validated['snapshot_url'] ?? $camera->preview_image,
+        'severity' => $validated['severity'] ?? 'sedang',
+        'reported_by' => $user->id ?? 1,
+        'reporter_name' => $user->name ?? 'Petugas Pos Ronda RT',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Bukti tangkapan layar CCTV berhasil disimpan ke Log Insiden Keamanan RT.',
+        'incident_id' => $incidentId,
+    ]);
+});
+
+// 3. GET /api/cctv/incidents - List Bukti Insiden
+Route::get('/cctv/incidents', function () {
+    $incidents = DB::table('cctv_incidents')->orderBy('id', 'desc')->limit(20)->get();
+    return response()->json([
+        'success' => true,
+        'data' => $incidents,
+    ]);
+});
+
+// 4. POST /api/cctv/{id}/toggle-status - Simulasi Status Online / Offline
+Route::post('/cctv/{id}/toggle-status', function ($id) {
+    $cam = DB::table('cctv_cameras')->where('id', $id)->first();
+    if (!$cam) return response()->json(['success' => false, 'message' => 'Kamera tidak ditemukan'], 404);
+
+    $newStatus = $cam->status === 'online' ? 'offline' : 'online';
+    DB::table('cctv_cameras')->where('id', $id)->update([
+        'status' => $newStatus,
+        'updated_at' => now(),
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => "Status {$cam->name} berhasil diubah menjadi: " . strtoupper($newStatus),
+        'new_status' => $newStatus,
+    ]);
+});
+
+
 
