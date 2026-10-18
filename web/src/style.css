@@ -226,6 +226,9 @@ body {
 /* Main Content Area */
 .main-wrapper {
   flex: 1;
+  min-width: 0;
+  width: calc(100% - 260px);
+  max-width: calc(100% - 260px);
   margin-left: 260px;
   display: flex;
   flex-direction: column;
@@ -450,6 +453,8 @@ body {
 .content-body {
   padding: 28px;
   flex: 1;
+  min-width: 0;
+  width: 100%;
 }
 
 /* Dashboard Grid (Matching Laptop Photo) */
@@ -632,25 +637,63 @@ body {
   padding: 24px;
 }
 
+/* Card Container with smooth overflow handling */
+.card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Horizontal Scrollable Table Wrapper (Memungkinkan Roll ke Kanan & Kiri) */
 .table-responsive {
-  overflow-x: auto;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  border-radius: 0 0 16px 16px;
+}
+
+/* Scrollbar Horizontal yang Nyaman & Terlihat Jelas */
+.table-responsive::-webkit-scrollbar {
+  height: 9px;
+  width: 9px;
+}
+.table-responsive::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 8px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #94A3B8;
+  border-radius: 8px;
+  border: 2px solid #F1F5F9;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #0B4626;
 }
 
 .data-table {
   width: 100%;
+  min-width: 960px; /* Menjamin tabel memiliki lebar ideal agar tidak terjepit & dapat di-roll horizontal */
   border-collapse: collapse;
   text-align: left;
 }
 
 .data-table th {
-  background: #f8fafc;
+  background: #F8FAFC;
   color: var(--text-muted);
   font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 12px 18px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
 }
 
 .data-table td {
@@ -658,6 +701,14 @@ body {
   font-size: 0.85rem;
   border-bottom: 1px solid var(--border-light);
   vertical-align: middle;
+  white-space: nowrap;
+}
+
+.data-table td.cell-wrap,
+.data-table td.address-cell {
+  white-space: normal;
+  min-width: 200px;
+  max-width: 280px;
 }
 
 .data-table tr:hover {

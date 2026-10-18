@@ -628,15 +628,37 @@
                     </td>
                     <td>
                       <div v-if="citizen.status === 'pending'" style="display: flex; gap: 6px;">
-                        <button class="btn-success" style="padding: 4px 8px; font-size: 0.75rem;" @click="approveCitizen(citizen.id)">
+                        <button class="btn-success" style="padding: 4px 10px; font-size: 0.75rem;" @click="approveCitizen(citizen.id)">
                           Setujui
                         </button>
-                        <button class="btn-outline" style="padding: 4px 8px; font-size: 0.75rem; color: #dc2626;" @click="rejectCitizen(citizen.id)">
+                        <button class="btn-outline" style="padding: 4px 10px; font-size: 0.75rem; color: #dc2626;" @click="rejectCitizen(citizen.id)">
                           Tolak
                         </button>
                       </div>
-                      <div v-else style="font-size: 0.78rem; color: #64748b;">
-                        {{ citizen.role.toUpperCase() }}
+                      <div v-else style="display: flex; align-items: center; gap: 8px;">
+                        <a
+                          v-if="citizen.phone"
+                          :href="`https://wa.me/${citizen.phone.replace(/^0/, '62')}`"
+                          target="_blank"
+                          class="btn-outline"
+                          style="padding: 5px 10px; font-size: 0.75rem; color: #16a34a; border-color: #86efac; background: #f0fdf4; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; font-weight: 700;"
+                          title="Hubungi warga via WhatsApp"
+                        >
+                          <Send size="12" />
+                          <span>Chat WA</span>
+                        </a>
+                        <button
+                          class="btn-outline"
+                          style="padding: 5px 10px; font-size: 0.75rem; color: #0284c7; border-color: #bae6fd; background: #f0f9ff; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;"
+                          title="Lihat detail lengkap warga"
+                          @click="openCitizenDetail(citizen)"
+                        >
+                          <Eye size="12" />
+                          <span>Detail</span>
+                        </button>
+                        <span class="badge" style="background: #f1f5f9; color: #475569; font-weight: 700; font-size: 0.7rem;">
+                          {{ citizen.role.toUpperCase() }}
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -2085,6 +2107,67 @@
       </div>
     </div>
 
+    <!-- MODAL: DETAIL DATA WARGA -->
+    <div v-if="showCitizenDetailModal && selectedCitizenDetail" class="modal-overlay" @click.self="showCitizenDetailModal = false">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <User size="18" style="color: #16a34a;" />
+            <span>Detail Identitas Warga</span>
+          </h3>
+          <button class="btn-close" @click="showCitizenDetailModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="text-align: center; padding: 16px 0; border-bottom: 1px solid #f1f5f9; margin-bottom: 16px;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #dcfce7; color: #15803d; font-size: 1.4rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+              {{ selectedCitizenDetail.name ? selectedCitizenDetail.name.charAt(0) : 'W' }}
+            </div>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">{{ selectedCitizenDetail.name }}</h3>
+            <span class="badge badge-success" style="margin-top: 6px;">{{ selectedCitizenDetail.role?.toUpperCase() || 'WARGA' }} TERDAFTAR</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+              <span style="color: #64748b;">NIK (KTP):</span>
+              <strong style="font-family: monospace; color: #0f172a;">{{ selectedCitizenDetail.nik }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+              <span style="color: #64748b;">Nomor WhatsApp:</span>
+              <strong style="color: #16a34a;">{{ selectedCitizenDetail.phone || '-' }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+              <span style="color: #64748b;">Wilayah:</span>
+              <strong style="color: #0f172a;">RT {{ selectedCitizenDetail.rt || '001' }} / RW {{ selectedCitizenDetail.rw || '005' }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+              <span style="color: #64748b;">Pekerjaan:</span>
+              <strong style="color: #0f172a;">{{ selectedCitizenDetail.occupation || '-' }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+              <span style="color: #64748b;">Alamat Rumah:</span>
+              <span style="color: #0f172a; text-align: right; max-width: 250px;">{{ selectedCitizenDetail.address || '-' }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-top: 4px;">
+              <span style="color: #64748b;">Status Verifikasi:</span>
+              <span class="badge badge-success">Terverifikasi Sah</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: space-between;">
+          <a
+            v-if="selectedCitizenDetail.phone"
+            :href="`https://wa.me/${selectedCitizenDetail.phone.replace(/^0/, '62')}`"
+            target="_blank"
+            class="btn-primary"
+            style="background: #16a34a; text-decoration: none; font-size: 0.8rem;"
+          >
+            <Send size="14" /> Kirim Pesan WA
+          </a>
+          <button class="btn-outline" @click="showCitizenDetailModal = false">Tutup</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL: KUSTOMISASI IDENTITAS DESA -->
     <div v-if="showSettingsModal" class="modal-overlay">
       <div class="modal-content">
@@ -3386,6 +3469,11 @@ async function submitVerification(action) {
   } catch (err) {
     alert('Gagal memproses verifikasi: ' + (err.response?.data?.message || err.message));
   }
+}
+
+function openCitizenDetail(citizen) {
+  selectedCitizenDetail.value = citizen;
+  showCitizenDetailModal.value = true;
 }
 
 function openProofPreview(url) {
