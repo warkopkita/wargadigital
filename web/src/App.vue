@@ -1010,50 +1010,215 @@
           </div>
         </div>
 
-<!-- 5. TAB: POSYANDU MELATI -->
+<!-- 5. TAB: POSYANDU MELATI (MANAJEMEN JADWAL, LIBUR MENDADAK & TUMBUH KEMBANG) -->
         <div v-if="currentTab === 'posyandu'">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+          <!-- Top Posyandu Alert Banner if any activity is postponed / libur mendadak -->
+          <div
+            v-if="posyanduData.activities?.some(a => a.status === 'postponed')"
+            style="margin-bottom: 20px; padding: 16px 20px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;"
+          >
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.6rem;">⚠️</span>
+              <div>
+                <strong style="color: #92400e; font-size: 0.95rem;">
+                  PENGUMUMAN DARURAT: Terdapat Jadwal Posyandu yang Diliburkan / Ditunda Mendadak!
+                </strong>
+                <p style="margin: 2px 0 0; font-size: 0.82rem; color: #b45309;">
+                  Kader telah menerbitkan maklumat ke Kabar Kampung dan menyiapkan pesan siaran WhatsApp ke grup ibu-ibu balita.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+            <!-- CARD 1: JADWAL POSYANDU & MANAJEMEN LIBUR MENDADAK -->
             <div class="card">
-              <div class="card-header">
+              <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
                 <h3 class="card-title">
                   <HeartPulse size="18" style="color: #ec4899;" />
-                  Jadwal Kegiatan Posyandu
+                  Jadwal & Agenda Posyandu Melati
                 </h3>
+                <button
+                  class="btn-primary"
+                  style="font-size: 0.78rem; padding: 6px 14px; background: #ec4899; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.25);"
+                  @click="openAddPosyanduModal"
+                >
+                  <Plus size="14" />
+                  <span>Jadwalkan Posyandu</span>
+                </button>
               </div>
+
               <div class="card-body" style="padding: 16px;">
-                <div v-for="activity in posyanduData.activities" :key="activity.id" style="padding: 14px; border-bottom: 1px solid #f1f5f9;">
-                  <strong style="color: #0f172a;">{{ activity.title }}</strong>
-                  <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">
-                    📅 Tanggal: {{ activity.activity_date }} • 📍 {{ activity.location }}
+                <div v-if="!posyanduData.activities || posyanduData.activities.length === 0" style="text-align: center; padding: 30px; color: #94a3b8;">
+                  Belum ada jadwal kegiatan posyandu. Silakan klik tombol di atas untuk membuat jadwal.
+                </div>
+
+                <div
+                  v-for="activity in posyanduData.activities"
+                  :key="activity.id"
+                  style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; background: white; transition: all 0.2s;"
+                >
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                    <div>
+                      <strong style="color: #0f172a; font-size: 1rem;">{{ activity.title }}</strong>
+                      <div style="font-size: 0.8rem; color: #64748b; margin-top: 3px;">
+                        📅 {{ formatDate(activity.activity_date) }} • 📍 {{ activity.location }}
+                      </div>
+                    </div>
+
+                    <!-- Status Badge -->
+                    <div>
+                      <span
+                        v-if="activity.status === 'postponed'"
+                        class="badge"
+                        style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-weight: 700; font-size: 0.74rem;"
+                      >
+                        ⚠️ Ditunda / Libur Mendadak
+                      </span>
+                      <span
+                        v-else-if="activity.status === 'cancelled'"
+                        class="badge badge-danger"
+                      >
+                        Dibatalkan
+                      </span>
+                      <span
+                        v-else
+                        class="badge badge-success"
+                      >
+                        🟢 Aktif Terjadwal
+                      </span>
+                    </div>
                   </div>
-                  <p style="font-size: 0.8rem; color: #334155; margin-top: 6px;">{{ activity.description }}</p>
+
+                  <p style="font-size: 0.84rem; color: #475569; margin: 8px 0; line-height: 1.45;">
+                    {{ activity.description || 'Penimbangan berat badan balita, pengukuran tinggi badan, imunisasi rutin, dan vitamin A.' }}
+                  </p>
+
+                  <!-- Warning Box if Posyandu is Postponed (Libur Mendadak) -->
+                  <div
+                    v-if="activity.status === 'postponed'"
+                    style="margin: 10px 0; padding: 12px; background: #fffbeb; border: 1px solid #fef08a; border-radius: 8px; font-size: 0.82rem; color: #92400e;"
+                  >
+                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                      <span>📢 Alasan Libur / Penundaan:</span>
+                    </div>
+                    <div style="margin-top: 4px; color: #78350f;">
+                      {{ activity.postponed_reason || 'Kader berhalangan karena keperluan mendadak.' }}
+                    </div>
+                    <div v-if="activity.rescheduled_date" style="margin-top: 6px; font-weight: 700; color: #15803d;">
+                      🗓️ Jadwal Pengganti: {{ formatDate(activity.rescheduled_date) }}
+                    </div>
+                  </div>
+
+                  <!-- Action Buttons for Posyandu Schedule -->
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9;">
+                    <!-- 1. Tombol Libur Mendadak / Tunda Jadwal -->
+                    <button
+                      v-if="activity.status !== 'postponed'"
+                      class="btn-outline"
+                      style="font-size: 0.74rem; padding: 5px 10px; color: #b45309; border-color: #fde68a; background: #fffbeb; display: inline-flex; align-items: center; gap: 5px; font-weight: 700;"
+                      title="Klik jika terjadi libur mendadak atau penundaan kegiatan"
+                      @click="openPostponeModal(activity)"
+                    >
+                      <AlertTriangle size="13" />
+                      <span>Libur Mendadak / Tunda</span>
+                    </button>
+
+                    <!-- Tombol Kembalikan Terjadwal jika sebelumnya ditunda -->
+                    <button
+                      v-else
+                      class="btn-outline"
+                      style="font-size: 0.74rem; padding: 5px 10px; color: #16a34a; border-color: #86efac; background: #f0fdf4; display: inline-flex; align-items: center; gap: 5px; font-weight: 700;"
+                      @click="activateSchedule(activity)"
+                    >
+                      <CheckCircle size="13" />
+                      <span>Aktifkan Kembali Jadwal</span>
+                    </button>
+
+                    <!-- 2. Tombol Broadcast WhatsApp ke Ibu-Ibu Balita -->
+                    <button
+                      class="btn-outline"
+                      style="font-size: 0.74rem; padding: 5px 10px; color: #16a34a; border-color: #86efac; background: #f0fdf4; display: inline-flex; align-items: center; gap: 5px; font-weight: 700;"
+                      title="Siarkan informasi jadwal atau libur ke WhatsApp Grup Posyandu"
+                      @click="broadcastPosyanduWhatsApp(activity)"
+                    >
+                      <Send size="13" />
+                      <span>Broadcast WA Ibu Balita</span>
+                    </button>
+
+                    <!-- 3. Edit Jadwal -->
+                    <button
+                      class="btn-outline"
+                      style="font-size: 0.74rem; padding: 5px 8px; color: #0284c7; border-color: #bae6fd;"
+                      @click="openEditPosyanduModal(activity)"
+                    >
+                      <span>Edit</span>
+                    </button>
+
+                    <!-- 4. Hapus Jadwal -->
+                    <button
+                      class="btn-outline"
+                      style="font-size: 0.74rem; padding: 5px 8px; color: #dc2626; border-color: #fecaca;"
+                      @click="deletePosyanduActivity(activity.id)"
+                    >
+                      <Trash2 size="13" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
+            <!-- CARD 2: CATATAN TUMBUH KEMBANG BALITA -->
             <div class="card">
-              <div class="card-header">
+              <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
                 <h3 class="card-title">
                   <Baby size="18" style="color: #0284c7;" />
                   Catatan Tumbuh Kembang Balita
                 </h3>
+                <button
+                  class="btn-primary"
+                  style="font-size: 0.78rem; padding: 6px 14px; background: #0284c7;"
+                  @click="showAddChildModal = true"
+                >
+                  <Plus size="14" />
+                  <span>Catat Data Balita</span>
+                </button>
               </div>
+
               <div class="card-body" style="padding: 16px;">
-                <div v-for="child in posyanduData.children" :key="child.id" style="padding: 14px; border-bottom: 1px solid #f1f5f9;">
+                <div v-if="!posyanduData.children || posyanduData.children.length === 0" style="text-align: center; padding: 30px; color: #94a3b8;">
+                  Belum ada catatan tumbuh kembang balita. Silakan klik "Catat Data Balita".
+                </div>
+
+                <div
+                  v-for="child in posyanduData.children"
+                  :key="child.id"
+                  style="padding: 14px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 12px; background: white;"
+                >
                   <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: #0f172a; font-size: 0.95rem;">{{ child.child_name }} ({{ child.gender }})</strong>
-                    <span class="badge badge-info">Lahir: {{ child.birth_date }}</span>
+                    <strong style="color: #0f172a; font-size: 0.95rem;">
+                      {{ child.child_name }} ({{ child.gender === 'L' ? 'Laki-laki' : 'Perempuan' }})
+                    </strong>
+                    <span class="badge badge-info" style="font-size: 0.72rem;">Lahir: {{ child.birth_date }}</span>
                   </div>
-                  <div style="display: flex; gap: 16px; margin-top: 8px; font-size: 0.82rem; color: #334155;">
-                    <div>⚖️ Berat: <strong>{{ child.weight_kg }} kg</strong></div>
-                    <div>📏 Tinggi: <strong>{{ child.height_cm }} cm</strong></div>
-                    <div>🧠 Lingkar: <strong>{{ child.head_circumference_cm }} cm</strong></div>
+
+                  <div style="display: flex; gap: 14px; margin-top: 8px; font-size: 0.82rem; color: #334155; flex-wrap: wrap;">
+                    <div style="background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                      ⚖️ Berat: <strong>{{ child.weight_kg }} kg</strong>
+                    </div>
+                    <div style="background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                      📏 Tinggi: <strong>{{ child.height_cm }} cm</strong>
+                    </div>
+                    <div style="background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                      🧠 Lingkar: <strong>{{ child.head_circumference_cm || '-' }} cm</strong>
+                    </div>
                   </div>
-                  <div style="font-size: 0.78rem; color: #16a34a; font-weight: 600; margin-top: 4px;">
-                    💉 Imunisasi: {{ child.immunization_type }}
+
+                  <div style="font-size: 0.78rem; color: #16a34a; font-weight: 700; margin-top: 8px;">
+                    💉 Imunisasi: {{ child.immunization_type || 'Lengkap sesuai usia' }}
                   </div>
-                  <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">
-                    Catatan kader: {{ child.cadre_notes }}
+                  <div style="font-size: 0.75rem; color: #64748b; margin-top: 3px;">
+                    Catatan kader: {{ child.cadre_notes || 'Tumbuh kembang baik & aktif.' }}
                   </div>
                 </div>
               </div>
@@ -2103,6 +2268,167 @@
               Kirim Laporan Situasi
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: BUAT / EDIT JADWAL POSYANDU -->
+    <div v-if="showPosyanduModal" class="modal-overlay" @click.self="showPosyanduModal = false">
+      <div class="modal-content" style="max-width: 520px;">
+        <div class="modal-header">
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <HeartPulse size="18" style="color: #ec4899;" />
+            <span>{{ isEditingPosyandu ? 'Edit Jadwal Posyandu' : 'Jadwalkan Kegiatan Posyandu Baru' }}</span>
+          </h3>
+          <button class="btn-close" @click="showPosyanduModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nama Kegiatan Posyandu</label>
+            <input v-model="posyanduForm.title" type="text" class="form-control" placeholder="Contoh: Posyandu Melati Berkala - November 2026" />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Tanggal Pelaksanaan</label>
+              <input v-model="posyanduForm.activity_date" type="date" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lokasi Posyandu</label>
+              <input v-model="posyanduForm.location" type="text" class="form-control" placeholder="Balai RW 005 / Pos RT 01" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nama Bidan / Kader Penanggung Jawab</label>
+            <input v-model="posyanduForm.cadre_name" type="text" class="form-control" placeholder="Bidan Dewi Lestari / Kader Melati" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Rincian Layanan / Pengumuman untuk Ibu Balita</label>
+            <textarea
+              v-model="posyanduForm.description"
+              class="form-control"
+              rows="3"
+              placeholder="Contoh: Penimbangan balita, pembagian vitamin A, imunisasi Polio/DPT, dan pemeriksaan tensi ibu hamil. Mohon membawa buku KIA."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" @click="showPosyanduModal = false">Batal</button>
+          <button class="btn-primary" style="background: #ec4899;" @click="savePosyanduActivity">
+            {{ isEditingPosyandu ? 'Simpan Perubahan' : 'Terbitkan Jadwal Posyandu' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: LIBUR MENDADAK / PENUNDAAN JADWAL POSYANDU -->
+    <div v-if="showPostponeModal && selectedPosyanduToPostpone" class="modal-overlay" @click.self="showPostponeModal = false">
+      <div class="modal-content" style="max-width: 520px;">
+        <div class="modal-header">
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px; color: #b45309;">
+            <AlertTriangle size="20" style="color: #d97706;" />
+            <span>Maklumat Libur Mendadak / Penundaan</span>
+          </h3>
+          <button class="btn-close" @click="showPostponeModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="padding: 12px; background: #fffbeb; border: 1px solid #fef08a; border-radius: 10px; margin-bottom: 16px; font-size: 0.85rem; color: #92400e;">
+            <strong>Kegiatan:</strong> {{ selectedPosyanduToPostpone.title }}<br />
+            <strong>Jadwal Semula:</strong> {{ formatDate(selectedPosyanduToPostpone.activity_date) }} • {{ selectedPosyanduToPostpone.location }}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Alasan Libur Mendadak / Penundaan</label>
+            <textarea
+              v-model="postponeForm.reason"
+              class="form-control"
+              rows="3"
+              placeholder="Contoh: Bidan Dewi berhalangan hadir karena dinas luar kota mendadak / Renovasi Balai RW / Libur Nasional."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tanggal Pengganti (Opsional jika sudah ditentukan)</label>
+            <input v-model="postponeForm.rescheduled_date" type="date" class="form-control" />
+            <div style="font-size: 0.74rem; color: #64748b; margin-top: 4px;">
+              *Kosongkan jika jadwal pengganti belum diputuskan (akan diumumkan kemudian).
+            </div>
+          </div>
+
+          <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 0.8rem; color: #166534;">
+            ✓ Sistem otomatis menerbitkan pengumuman darurat di <strong>Kabar Kampung</strong> dan menyiapkan teks siaran WhatsApp untuk grup ibu balita.
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: space-between;">
+          <button class="btn-outline" @click="showPostponeModal = false">Batal</button>
+          <button class="btn-primary" style="background: #d97706; border: none; font-weight: 700;" @click="submitPostponePosyandu">
+            <AlertTriangle size="14" />
+            <span>Tetapkan Libur Mendadak & Broadcast WA</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CATAT DATA TUMBUH KEMBANG BALITA BARU -->
+    <div v-if="showAddChildModal" class="modal-overlay" @click.self="showAddChildModal = false">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <Baby size="18" style="color: #0284c7;" />
+            <span>Catat Pengukuran Balita</span>
+          </h3>
+          <button class="btn-close" @click="showAddChildModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nama Balita</label>
+            <input v-model="childForm.child_name" type="text" class="form-control" placeholder="Nama lengkap balita" />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Jenis Kelamin</label>
+              <select v-model="childForm.gender" class="form-control">
+                <option value="L">Laki-laki (L)</option>
+                <option value="P">Perempuan (P)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tanggal Lahir</label>
+              <input v-model="childForm.birth_date" type="date" class="form-control" />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label class="form-label">Berat (kg)</label>
+              <input v-model="childForm.weight_kg" type="number" step="0.1" class="form-control" placeholder="12.5" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tinggi (cm)</label>
+              <input v-model="childForm.height_cm" type="number" step="0.5" class="form-control" placeholder="88.0" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lingkar (cm)</label>
+              <input v-model="childForm.head_circumference_cm" type="number" step="0.5" class="form-control" placeholder="47.0" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Jenis Imunisasi Diberikan</label>
+            <input v-model="childForm.immunization_type" type="text" class="form-control" placeholder="Contoh: Vitamin A, Polio 4, DPT-HB-Hib 3" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Catatan Kader</label>
+            <input v-model="childForm.cadre_notes" type="text" class="form-control" placeholder="Contoh: Pertumbuhan sangat baik, nafsu makan aktif" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" @click="showAddChildModal = false">Batal</button>
+          <button class="btn-primary" style="background: #0284c7;" @click="saveChildRecord">Simpan Data Balita</button>
         </div>
       </div>
     </div>
@@ -3468,6 +3794,128 @@ async function submitVerification(action) {
     await refreshData();
   } catch (err) {
     alert('Gagal memproses verifikasi: ' + (err.response?.data?.message || err.message));
+  }
+}
+
+function openAddPosyanduModal() {
+  isEditingPosyandu.value = false;
+  editingPosyanduId.value = null;
+  posyanduForm.value = {
+    title: 'Posyandu Melati Berkala - ' + new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
+    activity_date: new Date().toISOString().substring(0, 10),
+    location: 'Balai RW 005 (Samping Pos Ronda)',
+    cadre_name: 'Dewi Lestari (Kader Posyandu Melati)',
+    description: 'Penimbangan balita, pengukuran tinggi badan, imunisasi rutin, pembagian vitamin A, dan cek tensi ibu hamil.',
+  };
+  showPosyanduModal.value = true;
+}
+
+function openEditPosyanduModal(activity) {
+  isEditingPosyandu.value = true;
+  editingPosyanduId.value = activity.id;
+  posyanduForm.value = {
+    title: activity.title,
+    activity_date: activity.activity_date,
+    location: activity.location,
+    cadre_name: activity.cadre_name || 'Dewi Lestari (Kader Posyandu)',
+    description: activity.description,
+  };
+  showPosyanduModal.value = true;
+}
+
+async function savePosyanduActivity() {
+  if (!posyanduForm.value.title || !posyanduForm.value.activity_date) {
+    alert('Mohon lengkapi judul dan tanggal posyandu.');
+    return;
+  }
+  try {
+    if (isEditingPosyandu.value && editingPosyanduId.value) {
+      await axios.put(`${API_BASE}/posyandu/activity/${editingPosyanduId.value}`, posyanduForm.value);
+      alert('Jadwal Posyandu berhasil diperbarui!');
+    } else {
+      await axios.post(`${API_BASE}/posyandu/activity`, posyanduForm.value);
+      alert('Jadwal Posyandu berhasil dibuat dan dipublikasikan!');
+    }
+    showPosyanduModal.value = false;
+    await refreshData();
+  } catch (err) {
+    alert('Gagal menyimpan jadwal: ' + (err.response?.data?.message || err.message));
+  }
+}
+
+function openPostponeModal(activity) {
+  selectedPosyanduToPostpone.value = activity;
+  postponeForm.value = {
+    reason: 'Bidan Dewi berhalangan hadir mendadak dikarenakan tugas dinas luar kota.',
+    rescheduled_date: '',
+  };
+  showPostponeModal.value = true;
+}
+
+async function submitPostponePosyandu() {
+  if (!selectedPosyanduToPostpone.value) return;
+  try {
+    const res = await axios.post(`${API_BASE}/posyandu/activity/${selectedPosyanduToPostpone.value.id}/postpone`, postponeForm.value);
+    showPostponeModal.value = false;
+    await refreshData();
+    alert('Maklumat Libur Mendadak berhasil diterbitkan ke Kabar Kampung!');
+    
+    // Buka WhatsApp share
+    if (res.data?.whatsapp_broadcast_text) {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(res.data.whatsapp_broadcast_text)}`, '_blank');
+    }
+  } catch (err) {
+    alert('Gagal menunda kegiatan: ' + (err.response?.data?.message || err.message));
+  }
+}
+
+async function activateSchedule(activity) {
+  try {
+    await axios.put(`${API_BASE}/posyandu/activity/${activity.id}`, {
+      status: 'scheduled',
+      postponed_reason: null,
+    });
+    alert('Jadwal Posyandu kembali aktif terjadwal.');
+    await refreshData();
+  } catch (err) {
+    alert('Gagal mengaktifkan jadwal: ' + (err.response?.data?.message || err.message));
+  }
+}
+
+function broadcastPosyanduWhatsApp(activity) {
+  let text = '';
+  if (activity.status === 'postponed') {
+    text = `*📢 PEMBERITAHUAN PENUNDAAN POSYANDU MELATI RT 001/RW 005*\n\nKegiatan: *${activity.title}*\nSemula dijadwalkan: ${activity.activity_date} di ${activity.location}\n\n⚠️ *STATUS: DITUNDA / LIBUR MENDADAK*\nAlasan: ${activity.postponed_reason || 'Kader berhalangan hadir.'}\n` + (activity.rescheduled_date ? `Jadwal Pengganti: *${activity.rescheduled_date}*\n` : 'Jadwal pengganti akan diinfokan segera.\n') + `\nMohon maaf atas ketidaknyamanan ini 🙏\n- Kader Posyandu & Pengurus RT`;
+  } else {
+    text = `*🗓️ PENGINGAT JADWAL POSYANDU BALITA MELATI*\nRT 001 / RW 005\n\nKegiatan: *${activity.title}*\n📅 Hari/Tgl: ${activity.activity_date}\n📍 Lokasi: ${activity.location}\n\nProgram Layanan:\n${activity.description || 'Penimbangan BB/TB balita, imunisasi rutin, dan vitamin A.'}\n\nMohon ibu-ibu yang memiliki balita hadir tepat waktu dan membawa Buku KIA/KMS. Terima kasih 🙏\n- Kader Posyandu Melati`;
+  }
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+async function deletePosyanduActivity(id) {
+  if (!confirm('Yakin ingin menghapus jadwal posyandu ini?')) return;
+  try {
+    await axios.delete(`${API_BASE}/posyandu/activity/${id}`);
+    await refreshData();
+    alert('Jadwal posyandu berhasil dihapus.');
+  } catch (err) {
+    alert('Gagal menghapus jadwal: ' + (err.response?.data?.message || err.message));
+  }
+}
+
+async function saveChildRecord() {
+  if (!childForm.value.child_name) {
+    alert('Harap isi nama balita!');
+    return;
+  }
+  try {
+    await axios.post(`${API_BASE}/posyandu/record`, childForm.value);
+    showAddChildModal.value = false;
+    alert('Data tumbuh kembang balita berhasil dicatat!');
+    childForm.value.child_name = '';
+    await refreshData();
+  } catch (err) {
+    alert('Gagal mencatat data balita: ' + (err.response?.data?.message || err.message));
   }
 }
 

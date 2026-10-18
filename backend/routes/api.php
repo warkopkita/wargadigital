@@ -974,9 +974,18 @@ Route::post('/patrols/pay-fine', function (Request $request) {
 
 
 // --- 6. Posyandu & Tumbuh Kembang ---
+if (!Schema::hasColumn('posyandu_activities', 'status')) {
+    Schema::table('posyandu_activities', function ($table) {
+        $table->string('status', 30)->default('scheduled');
+        $table->text('postponed_reason')->nullable();
+        $table->date('rescheduled_date')->nullable();
+        $table->string('cadre_name')->nullable();
+    });
+}
+
 Route::get('/posyandu', function () {
     $activities = DB::table('posyandu_activities')->orderBy('activity_date', 'asc')->get();
-    $children = DB::table('child_records')->orderBy('child_name', 'asc')->get();
+    $children = DB::table('child_records')->orderBy('created_at', 'desc')->get();
 
     return response()->json([
         'success' => true,
@@ -984,6 +993,102 @@ Route::get('/posyandu', function () {
             'activities' => $activities,
             'children' => $children,
         ],
+    ]);
+});
+
+Route::post('/posyandu/activity', function (Request $request) {
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'activity_date' => 'required|date',
+        'location' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'cadre_name' => 'nullable|string',
+    ]);
+
+    $id = DB::table('posyandu_activities')->insertGetId([
+        'title' => $validated['title'],
+        'activity_date' => $validated['activity_date'],
+        'location' => $validated['location'],
+        'rt' => '001',
+        'description' => $validated['description'] ?? '',
+        'status' => 'scheduled',
+        'cadre_name' => $validated['cadre_name'] ?? 'Dewi Lestari (Kader Posyandu)',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Jadwal kegiatan Posyandu berhasil dibuat dan dipublikasikan.',
+        'data' => DB::table('posyandu_activities')->where('id', $id)->first(),
+    ], 201);
+});
+
+Route::put('/posyandu/activity/{id}', function (Request $request, $id) {
+    $validated = $request->validate([
+        'title' => 'sometimes|required|string|max:255',
+        'activity_date' => 'sometimes|required|date',
+        'location' => 'sometimes|required|string|max:255',
+        'description' => 'nullable|string',
+        'status' => 'nullable|string',
+        'postponed_reason' => 'nullable|string',
+        'rescheduled_date' => 'nullable|date',
+    ]);
+
+    $validated['updated_at'] = now();
+    DB::table('posyandu_activities')->where('id', $id)->update($validated);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Jadwal Posyandu berhasil diperbarui.',
+        'data' => DB::table('posyandu_activities')->where('id', $id)->first(),
+    ]);
+});
+
+// Penundaan / Libur Mendadak Posyandu + Otomatis Terbitkan Kabar Kampung + Siapkan Format WA
+Route::post('/posyandu/activity/{id}/postpone', function (Request $request, $id) {
+    $activity = DB::table('posyandu_activities')->where('id', $id)->first();
+    if (!$activity) {
+        return response()->json(['success' => false, 'message' => 'Kegiatan tidak ditemukan'], 404);
+    }
+
+    $reason = $request->input('reason', 'Libur mendadak dikarenakan kondisi darurat / dinas luar kader.');
+    $rescheduledDate = $request->input('rescheduled_date', null);
+
+    DB::table('posyandu_activities')->where('id', $id)->update([
+        'status' => 'postponed',
+        'postponed_reason' => $reason,
+        'rescheduled_date' => $rescheduledDate,
+        'updated_at' => now(),
+    ]);
+
+    // Otomatis terbitkan pengumuman darurat di Kabar Kampung
+    $announcementTitle = "⚠️ PEMBERITAHUAN: " . $activity->title . " DITUNDA / LIBUR";
+    $announcementContent = "Diberitahukan kepada seluruh warga RT 001/RW 005 khususnya ibu-ibu balita, kegiatan Posyandu yang semula dijadwalkan pada {$activity->activity_date} di {$activity->location} DITUNDA / DILIBURKAN.\n\nAlasan: {$reason}" . ($rescheduledDate ? "\nJadwal Pengganti: {$rescheduledDate}" : "\nJadwal baru akan diumumkan kembali.") . "\n\nMohon maaf atas ketidaknyamanannya. Terima kasih atas pengertiannya 🙏\n- Kader Posyandu Melati & Pengurus RT";
+
+    DB::table('news_posts')->insert([
+        'title' => $announcementTitle,
+        'slug' => 'posyandu-ditunda-' . time() . '-' . \Illuminate\Support\Str::random(4),
+        'category' => 'Posyandu',
+        'content' => $announcementContent,
+        'author_id' => 1,
+        'is_pinned' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Kegiatan Posyandu berhasil ditandai Libur Mendadak dan pengumuman otomatis diterbitkan ke Kabar Kampung!',
+        'whatsapp_broadcast_text' => "*📢 PEMBERITAHUAN PENUNDAAN POSYANDU MELATI RT 001*\n\nKegiatan: *{$activity->title}*\nSemula: {$activity->activity_date} di {$activity->location}\n\n⚠️ *STATUS: DITUNDA / LIBUR MENDADAK*\nAlasan: {$reason}\n" . ($rescheduledDate ? "Jadwal Pengganti: *{$rescheduledDate}*\n" : "Jadwal pengganti akan diinfokan segera.\n") . "\nMohon maaf atas ketidaknyamanan ini 🙏\n- Kader Posyandu & Pengurus RT",
+    ]);
+});
+
+Route::delete('/posyandu/activity/{id}', function ($id) {
+    DB::table('posyandu_activities')->where('id', $id)->delete();
+    return response()->json([
+        'success' => true,
+        'message' => 'Jadwal Posyandu berhasil dihapus.',
     ]);
 });
 
