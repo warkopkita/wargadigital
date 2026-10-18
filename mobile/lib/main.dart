@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'surat_layanan_modal_sheet.dart';
 
 void main() {
   runApp(const WargaDigitalApp());
@@ -1008,7 +1009,7 @@ class HomeDashboardPage extends StatelessWidget {
                     context,
                     icon: Icons.description_outlined,
                     label: 'Surat &\nDokumen',
-                    onTap: () => _openSuratDialog(context),
+                    onTap: () => _openSuratDialog(context, user),
                   ),
                   _buildServiceTile(
                     context,
@@ -1200,7 +1201,7 @@ class HomeDashboardPage extends StatelessWidget {
                       height: 44,
                       child: ElevatedButton(
                         onPressed: () {
-                          _openSuratDialog(context);
+                          _openSuratDialog(context, user);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFEA580C), // Vivid Orange
@@ -1901,46 +1902,12 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  static void _openSuratDialog(BuildContext context) {
+  static void _openSuratDialog(BuildContext context, [Map<String, dynamic>? user]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('📄 Layanan Surat & Dokumen', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 12),
-            _buildDialogItem('Surat Keterangan Domisili', 'Status: Diproses RT', isPending: true),
-            _buildDialogItem('Surat Pengantar Nikah / NA', 'Klik untuk ajukan baru'),
-            _buildDialogItem('Surat Keterangan Usaha (SKU)', 'Klik untuk ajukan baru'),
-            _buildDialogItem('Surat Keterangan Tidak Mampu (SKTM)', 'Klik untuk ajukan baru'),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Form pengajuan surat dibuka.')),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF16A34A),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                icon: const Icon(Icons.add),
-                label: const Text('Buat Pengajuan Surat Baru'),
-              ),
-            ),
-          ],
-        ),
-      ),
+      backgroundColor: Colors.transparent,
+      builder: (_) => SuratLayananModalSheet(user: user),
     );
   }
 
