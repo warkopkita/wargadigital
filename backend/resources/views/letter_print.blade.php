@@ -240,5 +240,16 @@
     </table>
   </div>
 
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('autoprint') === '1' || urlParams.get('print') === 'true') {
+        setTimeout(() => {
+          window.print();
+        }, 500);
+      }
+    });
+  </script>
 </body>
 </html>

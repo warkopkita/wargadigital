@@ -711,12 +711,14 @@
                           Tanda Tangan & QR
                         </button>
                         <a
-                          :href="`${SERVER_BASE}/letters/${letter.id}/print`"
+                          :href="`${API_BASE}/letters/${letter.id}/print?autoprint=1`"
                           target="_blank"
                           class="btn-success"
-                          style="text-decoration: none; padding: 5px 10px; font-size: 0.75rem;"
+                          style="text-decoration: none; padding: 6px 12px; font-size: 0.76rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"
+                          title="Buka Lembar Surat Resmi & Unduh / Cetak PDF"
                         >
-                          🖨️ Cetak Dokumen PDF
+                          <Printer size="13" />
+                          <span>Cetak Dokumen PDF</span>
                         </a>
                       </div>
                     </td>

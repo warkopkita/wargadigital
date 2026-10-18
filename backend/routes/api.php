@@ -2062,3 +2062,42 @@ Route::post('/cctv/{id}/toggle-status', function ($id) {
 
 
 
+
+
+// --- CETAK DOKUMEN RESMI (SURAT & KUITANSI RESMI RT) ---
+Route::get('/letters/{id}/print', function ($id) {
+    $letter = DB::table('letters')
+        ->join('users', 'letters.user_id', '=', 'users.id')
+        ->select(
+            'letters.*',
+            'users.name as citizen_name',
+            'users.nik as citizen_nik',
+            'users.phone as citizen_phone',
+            'users.rt as citizen_rt',
+            'users.rw as citizen_rw',
+            'users.address as citizen_address'
+        )
+        ->where('letters.id', $id)
+        ->first();
+
+    if (!$letter) {
+        abort(404, 'Surat tidak ditemukan.');
+    }
+
+    return view('letter_print', compact('letter'));
+});
+
+Route::get('/receipts/{receiptNumber}/print', function ($receiptNumber) {
+    $payment = DB::table('dues_payments')
+        ->join('dues_bills', 'dues_payments.bill_id', '=', 'dues_bills.id')
+        ->join('users', 'dues_payments.user_id', '=', 'users.id')
+        ->select('dues_payments.*', 'dues_bills.month', 'dues_bills.year', 'dues_bills.amount', 'users.name as citizen_name', 'users.nik as citizen_nik', 'users.rt as citizen_rt', 'users.rw as citizen_rw')
+        ->where('dues_payments.receipt_number', $receiptNumber)
+        ->first();
+
+    if (!$payment) {
+        abort(404, 'Kuitansi tidak ditemukan.');
+    }
+
+    return view('receipt_print', compact('payment'));
+});
