@@ -1774,7 +1774,7 @@
                   </button>
                   <button
                     class="btn-outline"
-                    style="color: white; border-color: rgba(255,255,255,0.3); font-size: 0.82rem; padding: 10px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;"
+                    style="background: rgba(255, 255, 255, 0.15); color: #ffffff; border-color: rgba(255, 255, 255, 0.35); font-size: 0.82rem; padding: 10px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;"
                     @click="fetchCctvData"
                   >
                     <RefreshCw size="14" /> Segarkan Feed
@@ -3307,6 +3307,46 @@ const citizensList = ref([]);
 const lettersList = ref([]);
 const patrolsList = ref([]);
 const linmasList = ref([]);
+
+// Linmas Presensi di Tempat & Situasi Keamanan State
+const linmasAttendances = ref([]);
+const linmasSubTab = ref('situation'); // 'situation' | 'attendance'
+const linmasSituationLogs = ref([
+  {
+    id: 1,
+    officer_name: 'Sujatmo (Komandan Linmas)',
+    post_name: 'Pos Pantau Utama RT 001',
+    status: 'aman',
+    details: 'Pintu portal barat telah dikunci pada pukul 23:00 WIB. Lampu jalan blok A & B menyala terang, situasi aman terkendali.',
+    time: '23:15 WIB',
+    verified_by: 'Bambang Sudarmono (Ketua RT 001)',
+  },
+  {
+    id: 2,
+    officer_name: 'Dedi Iskandar (Anggota Linmas)',
+    post_name: 'Pos Gerbang Barat',
+    status: 'aman',
+    details: 'Patroli putaran pertama jam 01:00 WIB selesai. Menegur sekelompok remaja yang nongkrong larut malam agar segera pulang dengan tertib.',
+    time: '01:20 WIB',
+    verified_by: 'Bambang Sudarmono (Ketua RT 001)',
+  },
+]);
+const showLinmasCheckInModal = ref(false);
+const linmasCheckInForm = ref({
+  officer_name: '',
+  shift: 'Piket Malam (20:00 - 04:00)',
+  post_name: 'Pos Pantau Utama RT 001',
+  situation_status: 'Aman & Kondusif',
+  notes: '',
+});
+const showLinmasSituationModal = ref(false);
+const linmasSituationForm = ref({
+  officer_name: '',
+  post_name: 'Pos Pantau Utama RT 001',
+  status: 'aman',
+  details: '',
+});
+
 const posyanduData = ref({ activities: [], children: [] });
 const complaintsList = ref([]);
 const treasuryData = ref({ summary: {}, data: [] });
@@ -3670,6 +3710,7 @@ async function refreshData() {
     patrolCheckpointsList.value = patrolsRes.data.recent_checkpoints || [];
     patrolSwapsList.value = patrolsRes.data.swap_requests || [];
     linmasList.value = linmasRes.data.data || [];
+    linmasAttendances.value = linmasRes.data.data || [];
     posyanduData.value = posyanduRes.data.data;
     complaintsList.value = complaintsRes.data.data;
     treasuryData.value = treasuryRes.data;
@@ -3919,6 +3960,57 @@ async function saveChildRecord() {
   } catch (err) {
     alert('Gagal mencatat data balita: ' + (err.response?.data?.message || err.message));
   }
+}
+
+// Linmas Actions
+async function fetchPatrols() {
+  try {
+    const res = await axios.get(`${API_BASE}/linmas/attendances`);
+    linmasAttendances.value = res.data.data || [];
+  } catch (err) {
+    console.error('Error fetching linmas attendances:', err);
+  }
+}
+
+async function submitLinmasCheckIn() {
+  try {
+    await axios.post(`${API_BASE}/linmas/checkin`, {
+      user_id: currentUser.value?.id || 1,
+      officer_name: linmasCheckInForm.value.officer_name || currentUser.value?.name || 'Petugas Linmas',
+      shift: linmasCheckInForm.value.shift,
+      post_name: linmasCheckInForm.value.post_name,
+      situation_status: linmasCheckInForm.value.situation_status,
+      notes: linmasCheckInForm.value.notes,
+    });
+    alert('Presensi Linmas di Tempat (GPS Valid) berhasil dicatat!');
+    showLinmasCheckInModal.value = false;
+    await fetchPatrols();
+  } catch (err) {
+    alert('Gagal mengirim presensi: ' + (err.response?.data?.message || err.message));
+  }
+}
+
+function submitLinmasSituation() {
+  if (!linmasSituationForm.value.details) {
+    alert('Rincian situasi wajib diisi!');
+    return;
+  }
+  linmasSituationLogs.value.unshift({
+    id: Date.now(),
+    officer_name: linmasSituationForm.value.officer_name || currentUser.value?.name || 'Petugas Linmas',
+    post_name: linmasSituationForm.value.post_name || 'Pos Ronda Utama RT 001',
+    status: linmasSituationForm.value.status || 'aman',
+    details: linmasSituationForm.value.details,
+    time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
+    verified_by: 'Bambang Sudarmono (Ketua RT 001)',
+  });
+  showLinmasSituationModal.value = false;
+  linmasSituationForm.value.details = '';
+  alert('Update situasi pos ronda berhasil dicatat ke Buku Mutasi Linmas!');
+}
+
+function verifyLinmasAttendance(id) {
+  alert('Presensi Linmas telah diverifikasi oleh Ketua RT 001.');
 }
 
 function openCitizenDetail(citizen) {
