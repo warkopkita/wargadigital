@@ -720,6 +720,17 @@
                           <Printer size="13" />
                           <span>Cetak Dokumen PDF</span>
                         </a>
+
+                        <button
+                          v-if="letter.status === 'selesai'"
+                          class="btn-outline"
+                          style="padding: 6px 12px; font-size: 0.76rem; color: #16a34a; border-color: #86efac; background: #f0fdf4; display: inline-flex; align-items: center; gap: 5px;"
+                          title="Kirim notifikasi berkas PDF selesai ke WhatsApp pemohon"
+                          @click="sendLetterWhatsApp(letter)"
+                        >
+                          <Send size="13" />
+                          <span>Kirim WA</span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1234,6 +1245,17 @@
                     class="form-control"
                     style="width: 220px; padding: 6px 12px; font-size: 0.78rem;"
                   />
+
+                  <!-- Broadcast WA Pengingat Jatuh Tempo -->
+                  <button
+                    class="btn-outline"
+                    style="font-size: 0.78rem; padding: 6px 12px; color: #16a34a; border-color: #86efac; background: #f0fdf4; display: inline-flex; align-items: center; gap: 6px; font-weight: 700;"
+                    title="Kirim pengingat jatuh tempo kas ke WhatsApp Grup RT"
+                    @click="broadcastDueReminderToGroup"
+                  >
+                    <Send size="13" />
+                    <span>Broadcast WA Jatuh Tempo</span>
+                  </button>
 
                   <!-- Export CSV -->
                   <a
@@ -1897,6 +1919,15 @@
                     <div style="font-size: 0.75rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 10px;">
                       Diposkan oleh {{ item.author_name }} • {{ formatDate(item.created_at) }}
                     </div>
+                    <button
+                      class="btn-outline"
+                      style="margin-top: 10px; padding: 6px 12px; font-size: 0.76rem; color: #16a34a; border-color: #86efac; background: #f0fdf4; display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: center; font-weight: 700;"
+                      title="Bagikan kabar pengumuman ini ke Grup WhatsApp Warga"
+                      @click="broadcastNewsWhatsApp(item)"
+                    >
+                      <Send size="13" />
+                      <span>Broadcast ke WhatsApp Grup Warga</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -3360,6 +3391,25 @@ async function submitVerification(action) {
 function openProofPreview(url) {
   previewProofUrl.value = url;
   showProofModal.value = true;
+}
+
+function sendLetterWhatsApp(letter) {
+  const cleanPhone = (letter.citizen_phone || '').replace(/[^0-9]/g, '');
+  const phone = cleanPhone.startsWith('0') ? '62' + cleanPhone.substring(1) : cleanPhone;
+  const printUrl = `${window.location.origin}/letters/${letter.id}/print?autoprint=1`;
+  const text = `Halo Bpk/Ibu ${letter.citizen_name},\n\nKabar baik! Pengajuan ${letter.letter_type} Anda (No. Surat: ${letter.letter_number || '-'}) telah SELESAI ditandatangani secara digital oleh Ketua RT 001.\n\nAnda dapat langsung mengunduh dan mencetak berkas PDF resmi ber-Kop & QR Code validasi melalui tautan berikut:\n${printUrl}\n\nTerima kasih 🙏\n- Pengurus RT 001 / RW 005`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function broadcastNewsWhatsApp(item) {
+  const text = `*📢 KABAR KAMPUNG RT 001/RW 005*\n\n*${(item.title || '').toUpperCase()}*\nKategori: ${item.category}\n\n${item.content}\n\nDiposkan oleh: ${item.author_name} (Pengurus RT)\n\nInformasi lengkap & layanan warga di aplikasi Warga Digital:\n${window.location.origin}`;
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function broadcastDueReminderToGroup() {
+  const currentMonth = duesData.value?.summary?.current_month || 'Oktober 2026';
+  const text = `*📢 PENGINGAT JATUH TEMPO IURAN KAS RT 001/RW 005*\nPeriode: ${currentMonth}\n\nYth. Bapak/Ibu Warga RT 001,\n\nMengingatkan kembali bagi warga yang belum menyelesaikan pembayaran Iuran Kas RT sebesar Rp 25.000 / KK untuk periode ${currentMonth}, dimohon untuk dapat melakukan pembayaran sebelum tanggal jatuh tempo.\n\n💳 *Pilihan Pembayaran:*\n1. *QRIS Statis RT* (Scan dari BCA, Mandiri, BRI, GoPay, OVO, DANA via aplikasi Warga Digital)\n2. *Transfer Bank BCA:* 8820-1928-31 a.n Kas Paguyuban RT 001\n3. *Tunai (Cash):* Langsung ke Bendahara RT (Ibu Siti Aminah)\n\nKuitansi digital ber-QR code dan rekap transparansi kas dapat dicek langsung di:\n${window.location.origin}\n\nTerima kasih atas partisipasi aktif seluruh warga 🙏\n- Pengurus & Bendahara RT 001`;
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
 }
 
 function sendWhatsAppReminder(bill) {
