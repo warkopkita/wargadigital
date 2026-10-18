@@ -1620,11 +1620,11 @@
                           </a>
 
                           <button
-                            v-if="b.status === 'menunggu_bayar'"
+                            v-if="b.status === 'menunggu_bayar' && canManageCash"
                             class="btn-primary"
                             style="font-size: 0.75rem; padding: 5px 10px; background: #16a34a; border: none; font-weight: 700;"
                             @click="receiveCashPayment(b)"
-                            title="Terima uang tunai dan terbitkan kuitansi sah"
+                            title="Terima uang tunai dan terbitkan kuitansi sah (Khusus Admin & Staff)"
                           >
                             💵 Terima Tunai
                           </button>
@@ -2475,6 +2475,12 @@ const showUserDropdown = ref(false);
 const showLogoutConfirm = ref(false);
 const showSwitchRoleModal = ref(false);
 
+// Wewenang Kelola Iuran Tunai (Khusus Admin & Staff Pengurus)
+const canManageCash = computed(() => {
+  const role = currentUser.value?.role;
+  return ['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin'].includes(role);
+});
+
 // Notifications State & Logic
 const showNotificationsDropdown = ref(false);
 const notifFilter = ref('all');
@@ -3044,6 +3050,10 @@ function sendWhatsAppReminder(bill) {
 }
 
 async function receiveCashPayment(bill) {
+  if (!canManageCash.value) {
+    alert('Akses ditolak: Hanya Admin dan Staff/Bendahara RT yang berwenang mencatat penerimaan iuran tunai.');
+    return;
+  }
   const confirmMsg = `Konfirmasi penerimaan pembayaran TUNAI (CASH) dari ${bill.citizen_name} sebesar ${formatRupiah(bill.amount)}?\n\nKuitansi digital resmi otomatis terbit dan tercatat di buku kas.`;
   if (!confirm(confirmMsg)) return;
 

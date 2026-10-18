@@ -1488,6 +1488,16 @@ Route::post('/dues/pay', function (Request $request) {
     ]);
 
     $isCash = in_array(strtolower($validated['payment_method']), ['cash', 'tunai']);
+    if ($isCash) {
+        $actor = DB::table('users')->where('id', $validated['user_id'])->first();
+        $allowedRoles = ['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin'];
+        if (!$actor || !in_array($actor->role, $allowedRoles)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak: Penerimaan tunai (cash) hanya dapat dicatat oleh Admin atau Staff/Bendahara RT. Silakan gunakan QRIS atau Transfer Bank.',
+            ], 403);
+        }
+    }
 
     // Insert payment record
     $paymentId = DB::table('dues_payments')->insertGetId([
@@ -1527,6 +1537,17 @@ Route::post('/dues/pay-cash-direct', function (Request $request) {
 
     $bill = DB::table('dues_bills')->where('id', $validated['bill_id'])->first();
     $user = DB::table('users')->where('id', $bill->user_id)->first();
+
+    // Verifikasi hak akses: hanya Admin / Staff / Bendahara yang berwenang mencatat tunai
+    $recorderId = $validated['recorded_by'] ?? 1;
+    $recorder = DB::table('users')->where('id', $recorderId)->first();
+    $allowedRoles = ['rt', 'rw', 'bendahara', 'sekretaris', 'staff', 'admin'];
+    if ($recorder && !in_array($recorder->role, $allowedRoles)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Akses ditolak: Hanya Admin dan Staff/Bendahara RT yang berwenang mencatat penerimaan iuran tunai.',
+        ], 403);
+    }
 
     $receiptNumber = 'KAS-CASH' . str_pad($user->rt ?? '01', 2, '0', STR_PAD_LEFT) . '-' . date('Ym') . '-' . str_pad($bill->id, 4, '0', STR_PAD_LEFT);
     $qrHash = hash('sha256', $receiptNumber . '|' . $bill->amount . '|' . $user->nik . '|cash|' . now()->toIso8601String());

@@ -1032,7 +1032,7 @@ class HomeDashboardPage extends StatelessWidget {
                     context,
                     icon: Icons.account_balance_wallet_outlined,
                     label: 'Iuran Kas\n& QRIS',
-                    onTap: () => _openKasDialog(context),
+                    onTap: () => _openKasDialog(context, user),
                   ),
                   _buildServiceTile(
                     context,
@@ -1447,7 +1447,7 @@ class HomeDashboardPage extends StatelessWidget {
             SizedBox(
               height: 44,
               child: ElevatedButton.icon(
-                onPressed: () => _openKasDialog(context),
+                onPressed: () => _openKasDialog(context, {'role': role}),
                 icon: const Icon(Icons.verified, size: 18),
                 label: const Text('Buka Verifikasi Kas Warga', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
@@ -1713,7 +1713,7 @@ class HomeDashboardPage extends StatelessWidget {
             SizedBox(
               height: 44,
               child: ElevatedButton.icon(
-                onPressed: () => _openKasDialog(context),
+                onPressed: () => _openKasDialog(context, {'role': role}),
                 icon: const Icon(Icons.qr_code_scanner, size: 18),
                 label: const Text(
                   'Bayar Kas (QRIS / Transfer)',
@@ -1899,12 +1899,12 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  static void _openKasDialog(BuildContext context) {
+  static void _openKasDialog(BuildContext context, [Map<String, dynamic>? user]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const KasPaymentModalSheet(),
+      builder: (_) => KasPaymentModalSheet(user: user),
     );
   }
 
@@ -3492,14 +3492,19 @@ class ProfilWargaPage extends StatelessWidget {
 // KAS PAYMENT & DIGITAL E-RECEIPT MODAL SHEET (Manual Transfer + QRIS Statis)
 // ---------------------------------------------------------------------------
 class KasPaymentModalSheet extends StatefulWidget {
-  const KasPaymentModalSheet({super.key});
+  final Map<String, dynamic>? user;
+  const KasPaymentModalSheet({super.key, this.user});
 
   @override
   State<KasPaymentModalSheet> createState() => _KasPaymentModalSheetState();
 }
 
 class _KasPaymentModalSheetState extends State<KasPaymentModalSheet> {
-  int _activeKasTab = 0; // 0: Iuran & Kuitansi, 1: Breakdown Keuangan Kas
+  int _activeKasTab = 0;
+  bool get isStaffOrAdmin {
+    final role = widget.user?['role']?.toString().toLowerCase();
+    return role == 'rt' || role == 'bendahara' || role == 'sekretaris' || role == 'staff' || role == 'admin';
+  } // 0: Iuran & Kuitansi, 1: Breakdown Keuangan Kas
   bool _isLoading = true;
   bool _isLoadingTreasury = false;
   Map<String, dynamic>? _bill;
@@ -3576,6 +3581,33 @@ class _KasPaymentModalSheetState extends State<KasPaymentModalSheet> {
           'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
       final isCash = _paymentMethod == 'cash';
+
+      // Jika Staff / Admin mencatat penerimaan tunai, gunakan pay-cash-direct agar langsung Lunas
+      if (isCash && isStaffOrAdmin) {
+        final res = await http.post(
+          Uri.parse('${getApiBase()}/dues/pay-cash-direct'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'bill_id': _bill!['id'],
+            'recorded_by': widget.user?['id'] ?? 1,
+            'notes': _notesController.text.trim().isEmpty ? 'Diterima tunai oleh ${widget.user?['name'] ?? 'Pengurus'}' : _notesController.text.trim(),
+          }),
+        );
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✓ Pembayaran tunai diterima & Kuitansi resmi langsung terbit!'),
+                backgroundColor: Color(0xFF16A34A),
+              ),
+            );
+          }
+          await _fetchBill();
+          await _fetchTreasury();
+          return;
+        }
+      }
+
       final res = await http.post(
         Uri.parse('${getApiBase()}/dues/pay'),
         headers: {'Content-Type': 'application/json'},
@@ -4145,35 +4177,62 @@ class _KasPaymentModalSheetState extends State<KasPaymentModalSheet> {
               ),
             ),
             const SizedBox(width: 6),
-            // CASH / Tunai
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _paymentMethod = 'cash'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 9),
-                  decoration: BoxDecoration(
-                    color: _paymentMethod == 'cash' ? const Color(0xFFFEF3C7) : Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: _paymentMethod == 'cash' ? const Color(0xFFD97706) : const Color(0xFFCBD5E1),
-                      width: _paymentMethod == 'cash' ? 2 : 1,
+            // CASH / Tunai (Khusus Admin & Staff Pengurus)
+            if (isStaffOrAdmin) ...[
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _paymentMethod = 'cash'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    decoration: BoxDecoration(
+                      color: _paymentMethod == 'cash' ? const Color(0xFFFEF3C7) : Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _paymentMethod == 'cash' ? const Color(0xFFD97706) : const Color(0xFFCBD5E1),
+                        width: _paymentMethod == 'cash' ? 2 : 1,
+                      ),
                     ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '💵 Tunai (Cash)',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                        color: _paymentMethod == 'cash' ? const Color(0xFFB45309) : const Color(0xFF475569),
+                    child: Center(
+                      child: Text(
+                        '💵 Terima Tunai',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11.5,
+                          color: _paymentMethod == 'cash' ? const Color(0xFFB45309) : const Color(0xFF475569),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
+
+        if (!isStaffOrAdmin) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFBBF7D0)),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, color: Color(0xFF16A34A), size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '💡 Ingin bayar tunai (cash)? Silakan serahkan uang tunai langsung ke Bendahara RT (Ibu Siti Aminah) di Pos RT / Rumah No. 12. Bendahara yang berwenang mencatat dan kuitansi resmi ber-QR Anda otomatis terbit.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF15803D), height: 1.35),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         const SizedBox(height: 14),
 
