@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'surat_layanan_modal_sheet.dart';
 
 void main() {
   runApp(const WargaDigitalApp());
@@ -1009,7 +1008,7 @@ class HomeDashboardPage extends StatelessWidget {
                     context,
                     icon: Icons.description_outlined,
                     label: 'Surat &\nDokumen',
-                    onTap: () => _openSuratDialog(context, user),
+                    onTap: () => _openSuratDialog(context),
                   ),
                   _buildServiceTile(
                     context,
@@ -1201,7 +1200,7 @@ class HomeDashboardPage extends StatelessWidget {
                       height: 44,
                       child: ElevatedButton(
                         onPressed: () {
-                          _openSuratDialog(context, user);
+                          _openSuratDialog(context);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFEA580C), // Vivid Orange
@@ -1907,37 +1906,16 @@ class HomeDashboardPage extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => SuratLayananModalSheet(user: user),
+      builder: (_) => SuratModalSheet(user: user),
     );
   }
 
   static void _openPosyanduDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('👶 Jadwal Posyandu Balita Melati', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 12),
-            const Text('Agenda Berikutnya:'),
-            const SizedBox(height: 4),
-            const Text('🗓️ Sabtu, 17 Oktober 2026 • 08.30 - 11.30 WIB', style: TextStyle(fontWeight: FontWeight.w700)),
-            const Text('📍 Balai Posyandu RW 05'),
-            const Text('📋 Kegiatan: Penimbangan berat badan, ukur tinggi badan, dan vitamin A.'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF16A34A), foregroundColor: Colors.white),
-              child: const Text('Tutup'),
-            ),
-          ],
-        ),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const PosyanduModalSheet(),
     );
   }
 
@@ -2030,22 +2008,9 @@ class HomeDashboardPage extends StatelessWidget {
   static void _openBeritaDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('📰 Kabar Berita Kampung', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 10),
-            _buildNewsItem('Kerja Bakti Bersama Menyambut Musim Hujan', '2 hari lalu'),
-            _buildNewsItem('Jadwal Imunisasi Balita Posyandu Melati', 'Kemarin'),
-            _buildNewsItem('Peremajaan Lampu Penerangan Gang RT 01', 'Hari ini'),
-          ],
-        ),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const BeritaModalSheet(),
     );
   }
 
@@ -7131,6 +7096,1032 @@ class _CctvModalSheetState extends State<CctvModalSheet> {
                           );
                         },
                       ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+// ==========================================
+// MODAL SHEET: LAYANAN SURAT & DOKUMEN WARGA (INTERAKTIF PENUH)
+// ==========================================
+class SuratModalSheet extends StatefulWidget {
+  final Map<String, dynamic>? user;
+  const SuratModalSheet({super.key, this.user});
+
+  @override
+  State<SuratModalSheet> createState() => _SuratModalSheetState();
+}
+
+class _SuratModalSheetState extends State<SuratModalSheet> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  bool _isLoading = false;
+
+  final List<Map<String, dynamic>> _letterCatalog = [
+    {
+      'type': 'Surat Keterangan Domisili',
+      'icon': Icons.home_work_rounded,
+      'color': Color(0xFF2563EB),
+      'bgColor': Color(0xFFEFF6FF),
+      'desc': 'Bukti tempat tinggal untuk buka rekening bank, kerja, atau domisili usaha.',
+      'req': 'KTP & KK'
+    },
+    {
+      'type': 'Surat Pengantar Nikah / NA',
+      'icon': Icons.favorite_rounded,
+      'color': Color(0xFFE11D48),
+      'bgColor': Color(0xFFFFF1F2),
+      'desc': 'Surat pengantar permohonan ke KUA atau Dinas Kependudukan Catatan Sipil.',
+      'req': 'KTP, KK, & Akta Kelahiran'
+    },
+    {
+      'type': 'Surat Keterangan Usaha (SKU)',
+      'icon': Icons.storefront_rounded,
+      'color': Color(0xFFD97706),
+      'bgColor': Color(0xFFFFFBEB),
+      'desc': 'Keterangan kepemilikan usaha UMKM warga untuk pengajuan KUR perbankan.',
+      'req': 'KTP & Foto Usaha'
+    },
+    {
+      'type': 'Surat Keterangan Tidak Mampu (SKTM)',
+      'icon': Icons.volunteer_activism_rounded,
+      'color': Color(0xFFEA580C),
+      'bgColor': Color(0xFFFFF7ED),
+      'desc': 'Pengantar beasiswa sekolah/kuliah, bantuan sosial, atau keringanan RS.',
+      'req': 'KTP & Kartu Keluarga'
+    },
+    {
+      'type': 'Pengantar SKCK Kepolisian',
+      'icon': Icons.badge_rounded,
+      'color': Color(0xFF059669),
+      'bgColor': Color(0xFFECFDF5),
+      'desc': 'Surat kelakuan baik RT/RW untuk pengurusan SKCK di Polsek terdekat.',
+      'req': 'KTP & Pas Foto'
+    },
+    {
+      'type': 'Surat Izin Keramaian & Tenda',
+      'icon': Icons.celebration_rounded,
+      'color': Color(0xFF7C3AED),
+      'bgColor': Color(0xFFF5F3FF),
+      'desc': 'Pemberitahuan hajatan keluarga, acara warga, dan pemasangan panggung.',
+      'req': 'KTP Penanggungjawab'
+    },
+  ];
+
+  List<Map<String, dynamic>> _myLetters = [
+    {
+      'id': 1,
+      'letter_type': 'Surat Keterangan Domisili',
+      'purpose': 'Syarat pembukaan rekening tabungan Bank Mandiri cabang Sudirman',
+      'letter_number': '470/019/RT.01/2026',
+      'status': 'diproses_rt',
+      'created_at': '18 Okt 2026, 09:30 WIB',
+      'applicant_name': 'Budi Santoso',
+      'applicant_nik': '3201234567890001',
+      'signed_by': 'H. Sulaiman (Ketua RT 001)',
+      'qr_code': 'QR-DOMISILI-RT01-2026-019',
+    },
+    {
+      'id': 2,
+      'letter_type': 'Surat Keterangan Usaha (SKU)',
+      'purpose': 'Pengajuan permodalan UMKM Warung Sembako Berkah di Bank BRI',
+      'letter_number': '470/012/RT.01/2026',
+      'status': 'selesai',
+      'created_at': '12 Okt 2026, 14:15 WIB',
+      'applicant_name': 'Budi Santoso',
+      'applicant_nik': '3201234567890001',
+      'signed_by': 'H. Sulaiman (Ketua RT 001)',
+      'qr_code': 'QR-SKU-RT01-2026-012',
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final role = widget.user?['role'] ?? 'warga';
+    final tabCount = (role == 'rt' || role == 'rw' || role == 'admin') ? 3 : 2;
+    _tabController = TabController(length: tabCount, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _openFormPengajuan([String? defaultType]) {
+    final formKey = GlobalKey<FormState>();
+    String selectedType = defaultType ?? _letterCatalog.first['type'];
+    final nameCtrl = TextEditingController(text: widget.user?['name'] ?? 'Budi Santoso');
+    final nikCtrl = TextEditingController(text: widget.user?['nik'] ?? '3201234567890001');
+    final purposeCtrl = TextEditingController();
+    final notesCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return Container(
+            height: MediaQuery.of(ctx).size.height * 0.90,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.edit_document, color: Color(0xFF16A34A), size: 24),
+                          SizedBox(width: 8),
+                          Text('Form Pengajuan Surat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                        ],
+                      ),
+                      IconButton(icon: const Icon(Icons.close, color: Color(0xFF64748B)), onPressed: () => Navigator.pop(ctx)),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFBBF7D0))),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.verified, color: Color(0xFF16A34A), size: 20),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text('Surat akan diproses dan ditandatangani secara digital ber-QR oleh Ketua RT.', style: TextStyle(color: Color(0xFF166534), fontSize: 11, fontWeight: FontWeight.w600)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('Jenis Surat yang Diajukan *', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          DropdownButtonFormField<String>(
+                            value: selectedType,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                            ),
+                            items: _letterCatalog.map((item) {
+                              return DropdownMenuItem<String>(
+                                value: item['type'] as String,
+                                child: Text(item['type'] as String, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) setModalState(() => selectedType = val);
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          const Text('Nama Lengkap Pemohon *', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: nameCtrl,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                            ),
+                            validator: (v) => (v == null || v.isEmpty) ? 'Nama tidak boleh kosong' : null,
+                          ),
+                          const SizedBox(height: 14),
+                          const Text('Nomor Induk Kependudukan (NIK) *', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: nikCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                            ),
+                            validator: (v) => (v == null || v.isEmpty) ? 'NIK tidak boleh kosong' : null,
+                          ),
+                          const SizedBox(height: 14),
+                          const Text('Keperluan Permohonan Surat *', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: purposeCtrl,
+                            maxLines: 2,
+                            decoration: InputDecoration(
+                              hintText: 'Contoh: Syarat pembukaan rekening Bank / Pendaftaran sekolah',
+                              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                            ),
+                            validator: (v) => (v == null || v.isEmpty) ? 'Mohon jelaskan keperluan surat' : null,
+                          ),
+                          const SizedBox(height: 14),
+                          const Text('Keterangan Tambahan / Catatan RT (Opsional)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: notesCtrl,
+                            maxLines: 2,
+                            decoration: InputDecoration(
+                              hintText: 'Catatan tambahan untuk Ketua RT jika diperlukan',
+                              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                if (formKey.currentState?.validate() ?? false) {
+                                  final newLetter = {
+                                    'id': DateTime.now().millisecondsSinceEpoch,
+                                    'letter_type': selectedType,
+                                    'purpose': purposeCtrl.text.trim(),
+                                    'letter_number': '470/0${_myLetters.length + 1}/RT.01/2026',
+                                    'status': 'diproses_rt',
+                                    'created_at': 'Hari ini, Baru Saja',
+                                    'applicant_name': nameCtrl.text.trim(),
+                                    'applicant_nik': nikCtrl.text.trim(),
+                                    'signed_by': 'H. Sulaiman (Ketua RT 001)',
+                                    'qr_code': 'QR-SURAT-RT01-${DateTime.now().millisecondsSinceEpoch}',
+                                  };
+                                  setState(() {
+                                    _myLetters.insert(0, newLetter);
+                                  });
+                                  Navigator.pop(ctx);
+                                  _tabController.animateTo(1);
+                                  _showSuccessDialog(newLetter);
+                                }
+                              },
+                              icon: const Icon(Icons.send_rounded, size: 18),
+                              label: const Text('Kirim Pengajuan ke Ketua RT', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF16A34A),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showSuccessDialog(Map<String, dynamic> letter) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 28),
+            SizedBox(width: 10),
+            Text('Pengajuan Terkirim!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Pengajuan "${letter['letter_type']}" telah berhasil dikirimkan ke Ketua RT 001.', style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Pemohon: ${letter['applicant_name']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text('Keperluan: ${letter['purpose']}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  const SizedBox(height: 4),
+                  const Text('Status: Menunggu Tanda Tangan Digital RT', style: TextStyle(fontSize: 11, color: Color(0xFFEA580C), fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF16A34A), foregroundColor: Colors.white),
+            child: const Text('OK, Mengerti'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLetterDetail(Map<String, dynamic> letter) {
+    final isDone = letter['status'] == 'selesai';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Center(
+              child: Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Lembar Surat Digital RT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // KOP SURAT
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        children: [
+                          const Text('RUKUN TETANGGA 001 / RUKUN WARGA 005', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
+                          const Text('KELURAHAN DIGITAL KECAMATAN MAJU BERSAMA', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                          const Divider(height: 16, thickness: 1.5, color: Color(0xFF0F172A)),
+                          Text(letter['letter_type'] ?? 'Surat Keterangan', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF166534))),
+                          const SizedBox(height: 4),
+                          Text('Nomor: ${letter['letter_number'] ?? '470/.../RT.01/2026'}', style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Data Pemohon:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    _buildDetailRow('Nama Lengkap', letter['applicant_name'] ?? 'Budi Santoso'),
+                    _buildDetailRow('NIK KTP', letter['applicant_nik'] ?? '3201234567890001'),
+                    _buildDetailRow('Keperluan', letter['purpose'] ?? '-'),
+                    _buildDetailRow('Tanggal Pengajuan', letter['created_at'] ?? '-'),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isDone ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: isDone ? const Color(0xFF86EFAC) : const Color(0xFFFDBA74)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(isDone ? Icons.verified : Icons.hourglass_top, color: isDone ? const Color(0xFF16A34A) : const Color(0xFFEA580C)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isDone ? 'Sah & Ditandatangani Elektronik' : 'Sedang Ditinjau Ketua RT',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isDone ? const Color(0xFF166534) : const Color(0xFFC2410C)),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  isDone ? 'Penandatangan: ${letter['signed_by']}' : 'Menunggu tanda tangan digital dari pengurus RT.',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    if (isDone) ...[
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: Colors.white, border: Border.all(color: const Color(0xFFCBD5E1)), borderRadius: BorderRadius.circular(12)),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.qr_code_2_rounded, size: 90, color: Color(0xFF0F172A)),
+                              Text(letter['qr_code'] ?? 'QR-VERIFIED', style: const TextStyle(fontSize: 9, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 44,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Dokumen ${letter['letter_type']} berhasil diunduh (PDF Ber-QR)!')),
+                            );
+                          },
+                          icon: const Icon(Icons.download, size: 18),
+                          label: const Text('Unduh / Cetak Surat PDF', style: TextStyle(fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF16A34A), foregroundColor: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 130, child: Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12))),
+          const Text(': ', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+          Expanded(child: Text(value, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 12, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final role = widget.user?['role'] ?? 'warga';
+    final isStaff = (role == 'rt' || role == 'rw' || role == 'admin');
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.88,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.description_rounded, color: Color(0xFF16A34A), size: 24),
+                    SizedBox(width: 8),
+                    Text('Layanan Surat & Dokumen', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close, color: Color(0xFF94A3B8)), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+          ),
+          TabBar(
+            controller: _tabController,
+            labelColor: const Color(0xFF16A34A),
+            unselectedLabelColor: const Color(0xFF64748B),
+            indicatorColor: const Color(0xFF16A34A),
+            labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+            tabs: [
+              const Tab(text: 'Ajukan Baru'),
+              Tab(text: 'Riwayat (${_myLetters.length})'),
+              if (isStaff) const Tab(text: 'Persetujuan RT'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // TAB 1: DAFTAR KATALOG SURAT (SEMUA BISA DIKLIK!)
+                ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    ..._letterCatalog.map((item) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => _openFormPengajuan(item['type']),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: item['bgColor'] as Color,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(item['icon'] as IconData, color: item['color'] as Color, size: 22),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(item['type'] as String, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A))),
+                                        const SizedBox(height: 2),
+                                        Text(item['desc'] as String, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.3)),
+                                        const SizedBox(height: 4),
+                                        Text('Syarat: ${item['req']}', style: const TextStyle(fontSize: 10, color: Color(0xFF16A34A), fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.chevron_right, color: Color(0xFF94A3B8), size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 46,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _openFormPengajuan(),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Buat Pengajuan Surat Baru', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF16A34A),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+
+                // TAB 2: RIWAYAT SURAT SAYA (SEMUA BISA DIKLIK DETAIL!)
+                _myLetters.isEmpty
+                    ? const Center(child: Text('Belum ada riwayat permohonan surat.'))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _myLetters.length,
+                        itemBuilder: (ctx, i) {
+                          final item = _myLetters[i];
+                          final isDone = item['status'] == 'selesai';
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(14),
+                                onTap: () => _showLetterDetail(item),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(item['letter_type'] ?? 'Surat', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A))),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: isDone ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: isDone ? const Color(0xFF86EFAC) : const Color(0xFFFDBA74)),
+                                            ),
+                                            child: Text(
+                                              isDone ? 'Selesai (Ber-QR)' : 'Diproses RT',
+                                              style: TextStyle(color: isDone ? const Color(0xFF16A34A) : const Color(0xFFEA580C), fontSize: 10, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(item['purpose'] ?? '-', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('No: ${item['letter_number']}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                                          const Row(
+                                            children: [
+                                              Text('Lihat Surat', style: TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.bold)),
+                                              Icon(Icons.chevron_right, size: 14, color: Color(0xFF16A34A)),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                // TAB 3: PERSETUJUAN KETUA RT (KHUSUS RT / RW / ADMIN)
+                if (isStaff)
+                  ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF86EFAC))),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.admin_panel_settings, color: Color(0xFF166534)),
+                            SizedBox(width: 10),
+                            Expanded(child: Text('Panel Ketua RT: Periksa surat warga dan bubuhkan tanda tangan digital secara instan.', style: TextStyle(fontSize: 11, color: Color(0xFF166534), fontWeight: FontWeight.bold))),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      ..._myLetters.where((l) => l['status'] != 'selesai').map((item) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE2E8F0))),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item['letter_type'] ?? 'Surat', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                              const SizedBox(height: 4),
+                              Text('Pemohon: ${item['applicant_name']} (NIK: ${item['applicant_nik']})', style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                              Text('Keperluan: ${item['purpose']}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        setState(() {
+                                          item['status'] = 'selesai';
+                                        });
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Surat ${item['letter_type']} telah berhasil ditandatangani digital!')),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.draw, size: 16),
+                                      label: const Text('Beri TTD Digital (QR)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF16A34A), foregroundColor: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ==========================================
+// MODAL SHEET: KABAR BERITA KAMPUNG (INTERAKTIF)
+// ==========================================
+class BeritaModalSheet extends StatelessWidget {
+  const BeritaModalSheet({super.key});
+
+  final List<Map<String, dynamic>> _newsList = const [
+    {
+      'title': 'Kerja Bakti Bersama Menyambut Musim Hujan',
+      'date': '2 hari lalu • 16 Okt 2026',
+      'category': 'Lingkungan',
+      'author': 'Pengurus RT 001',
+      'content': 'Seluruh warga diimbau hadir membawa peralatan kebersihan untuk membersihkan saluran selokan, memangkas ranting pohon yang rawan tumbang, dan membersihkan area pos ronda bersama. Konsumsi kopi dan snack disediakan pengurus.',
+    },
+    {
+      'title': 'Jadwal Imunisasi Balita & Vitamin A Posyandu Melati',
+      'date': 'Kemarin • 17 Okt 2026',
+      'category': 'Kesehatan',
+      'author': 'Kader Posyandu RW 05',
+      'content': 'Pelayanan penimbangan berat badan, pengukuran tinggi badan, imunisasi polio, campak, serta pembagian kapsul vitamin A bagi balita usia 6-59 bulan akan diadakan di Balai Warga RW 05 mulai pukul 08.30 WIB.',
+    },
+    {
+      'title': 'Peremajaan Lampu Penerangan Gang RT 01',
+      'date': 'Hari ini • 18 Okt 2026',
+      'category': 'Fasilitas',
+      'author': 'Seksi Pembangunan',
+      'content': 'Telah dipasang 6 unit lampu LED tenaga surya baru di sepanjang gang blok B dan jalan belakang pos kamling untuk meningkatkan keamanan dan penerangan warga di malam hari.',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.newspaper_rounded, color: Color(0xFF16A34A), size: 24),
+                    SizedBox(width: 8),
+                    Text('Kabar Berita Kampung RT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close, color: Color(0xFF94A3B8)), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _newsList.length,
+              itemBuilder: (ctx, i) {
+                final news = _newsList[i];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () {
+                        showDialog(
+                          context: ctx,
+                          builder: (dCtx) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                            title: Text(news['title'] ?? 'Berita', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${news['date']} • ${news['author']}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 10),
+                                Text(news['content'] ?? '', style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.5)),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('Tutup', style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.bold))),
+                            ],
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(6)),
+                                  child: Text(news['category'] ?? 'Umum', style: const TextStyle(color: Color(0xFF16A34A), fontSize: 10, fontWeight: FontWeight.bold)),
+                                ),
+                                Text(news['date'] ?? '', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(news['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F172A))),
+                            const SizedBox(height: 4),
+                            Text(news['content'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.4)),
+                            const SizedBox(height: 8),
+                            const Row(
+                              children: [
+                                Text('Baca Selengkapnya', style: TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.bold)),
+                                Icon(Icons.arrow_forward, size: 12, color: Color(0xFF16A34A)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ==========================================
+// MODAL SHEET: KEGIATAN POSYANDU (INTERAKTIF)
+// ==========================================
+class PosyanduModalSheet extends StatelessWidget {
+  const PosyanduModalSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.health_and_safety_rounded, color: Color(0xFFE11D48), size: 24),
+                    SizedBox(width: 8),
+                    Text('Layanan Posyandu Melati', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close, color: Color(0xFF94A3B8)), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFFFFF1F2), Color(0xFFFFE4E6)]),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFFECDD3)),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('🗓️ Jadwal Posyandu Terdekat', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF9F1239))),
+                        SizedBox(height: 6),
+                        Text('Sabtu, 24 Oktober 2026 • 08.30 - 11.30 WIB', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                        SizedBox(height: 4),
+                        Text('📍 Lokasi: Balai RW 005 (Samping Pos Ronda)', style: TextStyle(fontSize: 12, color: Color(0xFF475569))),
+                        SizedBox(height: 8),
+                        Text('Program: Penimbangan BB/TB balita, cek tensi lansia, PMT gizi seimbang, dan vitamin A.', style: TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Daftar Layanan Tersedia:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 10),
+                  _buildServiceRow(Icons.child_care, 'Posyandu Balita (0 - 5 Tahun)', 'Penimbangan, imunisasi rutin, dan vitamin', const Color(0xFF2563EB)),
+                  _buildServiceRow(Icons.elderly, 'Posyandu Lansia', 'Pemeriksaan gula darah, asam urat, & kolesterol', const Color(0xFF059669)),
+                  _buildServiceRow(Icons.pregnant_woman, 'Ibu Hamil & Menyusui', 'Pemeriksaan tensi & pembagian tablet penambah darah', const Color(0xFFD97706)),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 46,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Pendaftaran Posyandu Anda berhasil dicatat! Kader akan menghubungi via WhatsApp.')),
+                        );
+                      },
+                      icon: const Icon(Icons.how_to_reg, size: 18),
+                      label: const Text('Daftarkan Balita / Lansia Saya', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE11D48), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceRow(IconData icon, String title, String sub, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                Text(sub, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+              ],
+            ),
           ),
         ],
       ),
