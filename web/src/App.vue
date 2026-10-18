@@ -506,7 +506,7 @@
           </div>
 
           <!-- Quick Actions & Pending Verifications -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+          <div class="warga-charts-grid">
             <!-- Pending Citizens Card -->
             <div class="card">
               <div class="card-header">
@@ -1032,7 +1032,7 @@
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+          <div class="posyandu-cards-grid">
             <!-- CARD 1: JADWAL POSYANDU & MANAJEMEN LIBUR MENDADAK -->
             <div class="card">
               <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
@@ -1251,7 +1251,7 @@
               </h3>
             </div>
             <div class="card-body">
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
+              <div class="surat-cards-grid">
                 <div
                   v-for="item in complaintsList"
                   :key="item.id"
@@ -1628,7 +1628,7 @@
             </div>
 
             <!-- Financial Breakdown Section (Pemasukan & Pengeluaran) -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <div class="linmas-cards-grid" style="margin-bottom: 20px;">
               <!-- Breakdown Pemasukan -->
               <div class="card" style="margin-bottom: 0;">
                 <div class="card-header" style="padding-bottom: 8px;">
@@ -1847,13 +1847,13 @@
           <!-- 2x2 MULTI-CAMERA STREAM GRID -->
           <div
             id="cctv-grid-container"
-            style="background: #020617; padding: 18px; border-radius: 16px; border: 1px solid #1e293b; margin-bottom: 24px;"
+            class="cctv-panel-container"
           >
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 16px;">
+            <div class="cctv-cameras-grid">
               <div
                 v-for="cam in filteredCctvCameras"
                 :key="cam.id"
-                style="background: #0b1120; border-radius: 12px; overflow: hidden; border: 1px solid #1e293b; display: flex; flex-direction: column; position: relative;"
+                class="cctv-camera-card"
               >
                 <!-- Camera Header Overlay -->
                 <div style="background: rgba(15, 23, 42, 0.9); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08);">
@@ -1881,7 +1881,7 @@
                 </div>
 
                 <!-- Video Player Feed -->
-                <div style="position: relative; width: 100%; height: 260px; background: #000; overflow: hidden;">
+                <div class="cctv-video-wrap">
                   <video
                     v-if="cam.status === 'online'"
                     :src="cam.stream_url"
@@ -1915,8 +1915,8 @@
                 </div>
 
                 <!-- Bottom Controls & Action Bar -->
-                <div style="padding: 10px 14px; background: #090d16; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06);">
-                  <div style="display: flex; gap: 8px; align-items: center;">
+                <div class="cctv-card-footer">
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <button
                       class="btn-primary"
                       style="font-size: 0.75rem; padding: 5px 10px; background: #0284c7; border: none; font-weight: 700; display: flex; align-items: center; gap: 5px;"
@@ -1948,7 +1948,7 @@
           </div>
 
           <!-- Section 2: Inventaris Kamera & Riwayat Bukti Insiden -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="cctv-info-grid">
             <!-- Tabel Perangkat Hardware CCTV -->
             <div class="card">
               <div class="card-header">
@@ -2082,7 +2082,7 @@
               </button>
             </div>
             <div class="card-body">
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+              <div class="news-cards-grid">
                 <div
                   v-for="item in newsList"
                   :key="item.id"
