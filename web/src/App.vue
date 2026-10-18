@@ -174,19 +174,21 @@
     <div class="main-wrapper">
       <!-- Topbar Header (Matching Laptop Reference Photo) -->
       <header class="topbar">
-        <!-- Mobile Hamburger Menu Button -->
-        <button
-          class="mobile-nav-toggle-btn"
-          title="Buka Menu Navigasi"
-          @click="mobileNavOpen = !mobileNavOpen"
-        >
-          <Menu size="22" />
-        </button>
+        <div class="topbar-left">
+          <!-- Mobile Hamburger Menu Button -->
+          <button
+            class="mobile-nav-toggle-btn"
+            title="Buka Menu Navigasi"
+            @click="mobileNavOpen = !mobileNavOpen"
+          >
+            <Menu size="20" />
+          </button>
 
-        <!-- Left: Administrasi Desa / Warga Digital -->
-        <div class="topbar-brand">
-          <span class="topbar-subheading">ADMINISTRASI DESA</span>
-          <h2 class="topbar-heading">WARGA DIGITAL</h2>
+          <!-- Left: Administrasi Desa / Warga Digital -->
+          <div class="topbar-brand">
+            <span class="topbar-subheading">ADMINISTRASI DESA</span>
+            <h2 class="topbar-heading">WARGA DIGITAL</h2>
+          </div>
         </div>
 
         <!-- Center: Search Bar Pill -->
@@ -383,7 +385,7 @@
                 {{ stats.pending_letters || 18 }}
               </div>
               <div class="ref-stat-footer">
-                <span class="ref-stat-pill">Status Keuangan</span>
+                <span class="ref-stat-pill" style="background: #FEF3C7; color: #B45309;">Menunggu Proses</span>
               </div>
             </div>
 
@@ -394,7 +396,7 @@
                 {{ stats.treasury?.balance ? formatRupiah(stats.treasury.balance) : 'Rp 45.200.000' }}
               </div>
               <div class="ref-stat-footer">
-                <span class="ref-stat-pill">Status Keuangan</span>
+                <span class="ref-stat-pill" style="background: #DCFCE7; color: #15803D;">Kas RT Aktif</span>
               </div>
             </div>
           </div>

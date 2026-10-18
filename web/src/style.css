@@ -77,6 +77,8 @@ body {
   display: flex;
   min-height: 100vh;
   position: relative;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* Sidebar (Desktop - Matching Laptop Photo) */
@@ -248,6 +250,13 @@ body {
   top: 0;
   z-index: 30;
   height: 70px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
 
 .topbar-brand {
@@ -1012,7 +1021,8 @@ body {
   .main-wrapper {
     margin-left: 0 !important;
     width: 100% !important;
-    min-width: 0 !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
   }
 
   .topbar {
@@ -1021,6 +1031,13 @@ body {
     min-height: 60px;
     gap: 10px;
     flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .topbar-left {
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
   }
 
   .topbar-brand {
@@ -1264,14 +1281,23 @@ body {
 @media (max-width: 768px) {
   .mobile-bottom-nav {
     display: flex;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 4px);
+    height: calc(62px + env(safe-area-inset-bottom, 0px));
   }
   
   .content-body {
-    padding-bottom: 84px !important; /* Space for sticky bottom navigation */
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important; /* Space for sticky bottom navigation */
   }
 
   .sidebar {
     width: 290px;
     max-width: 86vw;
+  }
+
+  .main-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
   }
 }
